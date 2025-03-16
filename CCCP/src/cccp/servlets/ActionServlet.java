@@ -67,10 +67,9 @@ public class ActionServlet extends HttpServlet {
 				return;
 			}
 			
-			Command command = controllerFactory.getCommand(option);
+			Command command = controllerFactory.getCommand(option, request, response);
 			if (command != null) {
 				command.execute();
-				response.sendRedirect("success.jsp");
 			}else {
 				response.sendRedirect("error.jsp");
 			}

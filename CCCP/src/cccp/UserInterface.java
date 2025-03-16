@@ -50,7 +50,7 @@ public class UserInterface {
                 return;
             }
 
-            Command command = controllerFactory.getCommand(option);
+            Command command = controllerFactory.getCommand(option, null, null);
             if (command != null) {
                 command.execute();
             } else {

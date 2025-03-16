@@ -19,6 +19,8 @@ import cccp.controller.*;
 import cccp.model.dao.*;
 import cccp.service.*;
 import cccp.view.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class ControllerFactory {
     private final Scanner scanner;
@@ -39,12 +41,12 @@ public class ControllerFactory {
         this.onlineDAO = onlineDAO;
     }
 
-    public Command getCommand(int option) {
+    public Command getCommand(int option, HttpServletRequest request, HttpServletResponse response) {
     	
     	
         switch (option) {
             case 1:
-                return new CategoryCommand(new CategoryController(new CategoryView(), new CategoryDAO()));
+                return new CategoryCommand(request, response);
             case 2:
                 return new ProductCommand(new ProductController(new ProductView(), new ProductDAO()));
             case 3:

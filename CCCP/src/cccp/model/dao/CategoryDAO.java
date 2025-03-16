@@ -5,6 +5,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
 import cccp.database.DatabaseConnection;
 import cccp.model.Category;
 
@@ -73,6 +76,26 @@ public class CategoryDAO{
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+    
+    
+ // Display all categories for GUI
+    public List<Category> viewAllItemsGUI() {
+        List<Category> categories = new ArrayList<>();
+        String query = "SELECT * FROM categories";
+        try (Statement stmt = getConnection().createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                categories.add(new Category(id, name));  // Add the category to the list
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Categories retrieved: " + categories.size()); 
+        return categories;  // Return the list of categories
     }
 
     // Edit category using a Category object
