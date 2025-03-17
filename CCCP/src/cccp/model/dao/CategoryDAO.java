@@ -18,7 +18,8 @@ public class CategoryDAO{
     }
 
     // Create category using a Category object
-    public void addItem(Category category) {
+    public int addItem(Category category) {
+    	int result = 0;
         String query = "INSERT INTO categories (name) VALUES (?)";
 
         try (PreparedStatement pst = getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
@@ -30,6 +31,7 @@ public class CategoryDAO{
                     if (rs.next()) {
                         category.setId(rs.getInt(1)); // Set the generated ID
                         System.out.println("Category created with ID: " + category.getId());
+                        result = 1;
                     }
                 }
             } else {
@@ -38,6 +40,8 @@ public class CategoryDAO{
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        
+        return result;
     }
 
     // Search category by ID and return a Category object

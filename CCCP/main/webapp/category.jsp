@@ -22,7 +22,7 @@
                             <td><%= category.getId() %></td>
                             <td><%= category.getName() %></td>
                             <td>
-                                <a href="updateCategory.jsp?id=<%= category.getId() %>" class="btn btn-warning btn-sm">Edit</a>
+                                <a href="editCategory.jsp?id=<%= category.getId() %>" class="btn btn-warning btn-sm">Edit</a>
                                 <form action="CategoryServlet" method="POST" style="display:inline;">
                                     <input type="hidden" name="action" value="delete" />
                                     <input type="hidden" name="id" value="<%= category.getId() %>" />
