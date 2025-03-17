@@ -7,6 +7,8 @@
     
 </head>
 
+<body>
+
 <div x-data="setup()" :class="{ 'dark': isDark }">
     <div class="min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-white dark:bg-gray-700 text-black dark:text-white">
     
@@ -233,6 +235,8 @@
       </div>
     </div>
   </div>    
+  
+  </body>
 
   <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js" defer></script>
   <script>
