@@ -1,20 +1,28 @@
 package cccp.command;
 
 import cccp.controller.ProductController;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class ProductCommand implements Command {
 	
-	private ProductController productController;
+	private final HttpServletRequest request;
+	private final HttpServletResponse response;	
 	
-	// Constructor to initialize the ProductController
-	public ProductCommand(ProductController productController) {
-		this.productController = productController; 
+	// Constructor
+	public ProductCommand(HttpServletRequest request, HttpServletResponse response) {
+		this.request = request;
+		this.response = response;
 	}
 
-	// Executes the product-related action by calling the controller's run method
+	// Execute method
 	@Override
 	public void execute() {
-		productController.run();
+		try {
+			request.getRequestDispatcher("ProductServlet").forward(request, response);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 }

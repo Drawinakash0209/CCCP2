@@ -73,6 +73,29 @@ public class ProductDAO implements ProductDAOInterface{
             e.printStackTrace();
         }
     }
+    
+    public List<Product> viewAllItemsGUI() {
+		List<Product> products = new ArrayList<>();
+		String productQuery = "SELECT * FROM products";
+		try (Statement stmt = getConnection().createStatement();
+			 ResultSet rs = stmt.executeQuery(productQuery)) {
+
+			while (rs.next()) {
+				Product product = new Product.Builder()
+						.setId(rs.getString("id"))
+						.setName(rs.getString("name"))
+						.setPrice(rs.getDouble("price"))
+						.setReorderLevel(rs.getInt("reorder_level"))
+						.setCategoryId(rs.getInt("category_id"))
+						.build();
+				products.add(product);
+			}
+		} catch (SQLException e) {
+			System.err.println("Error reading products: " + e.getMessage());
+			e.printStackTrace();
+		}
+		return products;
+	}
 
     // Update an existing product
     public void updateItem(Product product) {

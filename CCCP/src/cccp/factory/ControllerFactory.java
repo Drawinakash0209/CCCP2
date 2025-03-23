@@ -48,9 +48,11 @@ public class ControllerFactory {
             case 1:
                 return new CategoryCommand(request, response);
             case 2:
-                return new ProductCommand(new ProductController(new ProductView(), new ProductDAO()));
+                return new ProductCommand(request, response);
+                
             case 3:
-                return new BatchCommand(new BatchController(new BatchView(), batchDAO, new ProductService(productDAO, batchDAO)));
+            	return new BatchCommand(request, response);
+
             case 4:
                 ShelfService shelfService = new ShelfService(batchDAO, shelfDAO);
                 ProductService productService = new ProductService(productDAO, batchDAO);
