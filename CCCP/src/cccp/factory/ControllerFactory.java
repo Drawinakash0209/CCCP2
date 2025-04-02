@@ -70,9 +70,9 @@ public class ControllerFactory {
                 BillingService billingService2 = new BillingService(billDAO, productDAO, shelfService2, saleDAO);
                 return new BillCommand(new BillController(new BillView(billingService2), billingService2, productDAO));
             case 7:
-                return new BillReportCommand();
+                return new BillReportCommand(request, response);
             case 8:
-                return new SalesReportCommand();
+                return new SalesReportCommand(request, response);
             case 9:
             	return new ReorderReportCommand(new ReportService(new ProductDAO()));
             case 10:

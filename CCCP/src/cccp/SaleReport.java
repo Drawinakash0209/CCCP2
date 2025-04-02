@@ -9,6 +9,11 @@ public class SaleReport {
 		this.summary = summary;
 	}
 	
+	
+	public Map<String, Summary> getSummary() {
+	    return summary;
+	    }
+	  
 	public void display() {
 		System.out.println("=====DAILY SALES REPORT=====");
 		System.out.println("---------------------------------");

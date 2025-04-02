@@ -11,28 +11,26 @@ import cccp.model.dao.BillDAO;
 import cccp.model.dao.ProductDAO;
 import cccp.model.dao.ProductDAOInterface;
 import cccp.model.dao.SaleDAO;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class SalesReportCommand implements Command {
-	private ReportService reportService;
+	private final HttpServletRequest request;
+	private final HttpServletResponse response;
 	
-	public SalesReportCommand() {
-		this.reportService = new ReportService(new SaleDAO(), new ProductDAO());
+	
+	public SalesReportCommand(HttpServletRequest request, HttpServletResponse response) {
+		this.request = request;
+		this.response = response;
 	}
 
 	@Override
-    public void execute() {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Enter the date for the sales report (yyyy-MM-dd): ");
-        String inputDate = scanner.nextLine();
-
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-        try {
-            Date date = formatter.parse(inputDate);
-            SaleReport saleReport = reportService.generateSalesReport(date);
-            saleReport.display();
-        } catch (ParseException e) {
-            System.out.println("Invalid date format. Please use yyyy-MM-dd.");
-        }
+    public void execute() {		
+		try {
+			request.getRequestDispatcher("SalesReportServlet").forward(request, response);	
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
     }
 
 }
