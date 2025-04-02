@@ -74,7 +74,7 @@ public class ControllerFactory {
             case 8:
                 return new SalesReportCommand(request, response);
             case 9:
-            	return new ReorderReportCommand(new ReportService(new ProductDAO()));
+            	return new ReorderReportCommand(request, response);
             case 10:
             	return new StockReportCommand(new ReportService(new ProductDAO()) );
             	

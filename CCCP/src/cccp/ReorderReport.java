@@ -11,6 +11,10 @@ public class ReorderReport {
 		this.products = products;
 	}
 	
+	public List<Product> getProducts() {
+		return products;
+	}	
+	
 	public void displayReport() {
 		System.out.println("Reorder Report: Products with stock below reorder level (50 items):");
 		System.out.printf("%-10s %-20s%n", "Product ID", "Name");
