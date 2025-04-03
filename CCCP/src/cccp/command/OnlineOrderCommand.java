@@ -1,17 +1,25 @@
 package cccp.command;
 
 import cccp.controller.OnlineOrderController;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class OnlineOrderCommand implements Command{
-	private final OnlineOrderController onlineOrderController;
+	private final HttpServletRequest request;
+	private final HttpServletResponse response;
 	
-	 public OnlineOrderCommand(OnlineOrderController onlineOrderController) {
-	        this.onlineOrderController = onlineOrderController;
+	 public OnlineOrderCommand(HttpServletRequest request, HttpServletResponse response) {
+	        this.request = request;
+	        this.response = response;
 	 }
 	 
 	 @Override
 	 public void execute() {
-	        onlineOrderController.manageOnlineOrders();
+	        try {
+	            request.getRequestDispatcher("OnlineOrderServlet").forward(request, response);
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
 	 }
 
 }
