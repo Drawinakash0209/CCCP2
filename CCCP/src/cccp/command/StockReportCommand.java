@@ -1,18 +1,26 @@
 package cccp.command;
 
 import cccp.ReportService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 
 public class StockReportCommand implements Command {
-	private ReportService reportService;
+	private final HttpServletRequest request;
+	private final HttpServletResponse response;
 	
-	 public StockReportCommand(ReportService reportService) {
-	        this.reportService = reportService;
+	 public StockReportCommand(HttpServletRequest request, HttpServletResponse response) {
+	       this.request = request;
+	       this.response = response;	
 	 }
 	 
 	@Override
 	public void execute() {
-        reportService.generateStockReport();
+        try {
+			request.getRequestDispatcher("StockReportServlet").forward(request, response);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
     }
 
 }

@@ -30,7 +30,7 @@ public interface ProductDAOInterface {
     List<Product> getProductBelowReorderLevel();
 
     // Method to generate stock report
-    void generateStockReport();
+    List<StockItem> generateStockReport();
     
     // Method to get all products
     List<Product> getAllProducts();

@@ -227,7 +227,8 @@ public class ProductDAO implements ProductDAOInterface{
     }
     
  // Stock report generation: Batch-wise stock details
-    public void generateStockReport() {
+    public List<StockItem> generateStockReport() {
+    	List<StockItem> stockItems = new ArrayList<>();
         String query = "SELECT p.id AS product_id, p.name AS product_name, " +
                        "b.batch_code, b.quantity, b.purchase_date, b.expiry_date " +
                        "FROM products p " +
@@ -236,26 +237,32 @@ public class ProductDAO implements ProductDAOInterface{
 
         try (PreparedStatement pst = getConnection().prepareStatement(query);
              ResultSet rs = pst.executeQuery()) {
-
-            System.out.printf("%-10s | %-20s | %-10s | %-10s | %-15s | %-15s\n",
-                              "Product ID", "Product Name", "Batch Code", "Quantity", "Purchase Date", "Expiry Date");
-            System.out.println("--------------------------------------------------------------------------------------------");
-
             while (rs.next()) {
-                String productId = rs.getString("product_id");
-                String productName = rs.getString("product_name");
-                String batchCode = rs.getString("batch_code");
-                int quantity = rs.getInt("quantity");
-                String purchaseDate = rs.getString("purchase_date");
-                String expiryDate = rs.getString("expiry_date");
-
-                System.out.printf("%-10s | %-20s | %-10s | %-10d | %-15s | %-15s\n",
-                                  productId, productName, batchCode, quantity, purchaseDate, expiryDate);
+//                String productId = rs.getString("product_id");
+//                String productName = rs.getString("product_name");
+//                String batchCode = rs.getString("batch_code");
+//                int quantity = rs.getInt("quantity");
+//                String purchaseDate = rs.getString("purchase_date");
+//                String expiryDate = rs.getString("expiry_date");
+//
+//                System.out.printf("%-10s | %-20s | %-10s | %-10d | %-15s | %-15s\n",
+//                                  productId, productName, batchCode, quantity, purchaseDate, expiryDate);
+            	StockItem stockItem = new StockItem(
+						rs.getString("product_id"),
+						rs.getString("product_name"),
+						rs.getString("batch_code"),
+						rs.getInt("quantity"),
+						rs.getString("purchase_date"),
+						rs.getString("expiry_date")
+				);
+            	stockItems.add(stockItem);
             }
         } catch (SQLException e) {
             System.err.println("Error generating stock report: " + e.getMessage());
             e.printStackTrace();
         }
+        return stockItems;
+        
     }
     
     

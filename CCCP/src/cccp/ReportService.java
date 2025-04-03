@@ -11,9 +11,11 @@
 	import cccp.model.Product;
 	import cccp.model.Sale;
 	import cccp.model.dao.BillDAOInterface;
-	import cccp.model.dao.ProductDAOInterface;
+import cccp.model.dao.ProductDAO;
+import cccp.model.dao.ProductDAOInterface;
 	import cccp.model.dao.SaleDAOInterface;
 	import cccp.model.dao.ShelfDAOInterface;
+import cccp.model.dao.StockItem;
 	
 	public class ReportService {
 		private BillDAOInterface billDAO;
@@ -67,8 +69,8 @@
 			return new ReorderReport(products);
 		}
 	
-		public void generateStockReport() {
-			productDAO.generateStockReport();		
+		public List<StockItem> generateStockReport() {
+			return productDAO.generateStockReport();		
 		}
 		
 		public ReshelveReport generateReshelveReport() {
