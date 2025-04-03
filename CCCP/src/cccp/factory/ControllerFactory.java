@@ -54,11 +54,12 @@ public class ControllerFactory {
             	return new BatchCommand(request, response);
 
             case 4:
-                ShelfService shelfService = new ShelfService(batchDAO, shelfDAO);
-                ProductService productService = new ProductService(productDAO, batchDAO);
-                shelfService.addRestockListener(productService);
-                ShelfView shelfView = new ShelfView(scanner);
-                return new ShelfCommand(new ShelfController(shelfService, shelfView));
+//                ShelfService shelfService = new ShelfService(batchDAO, shelfDAO);
+//                ProductService productService = new ProductService(productDAO, batchDAO);
+//                shelfService.addRestockListener(productService);
+//                ShelfView shelfView = new ShelfView(scanner);
+//                return new ShelfCommand(new ShelfController(shelfService, shelfView));
+            	return new ShelfCommand(request, response);
             case 5:
                 OnlineOrderService onlineService = new OnlineOrderService(batchDAO, onlineDAO);
                 ProductService productService1 = new ProductService(productDAO, batchDAO);
@@ -76,10 +77,9 @@ public class ControllerFactory {
             case 9:
             	return new ReorderReportCommand(request, response);
             case 10:
-            	return new StockReportCommand(request, response);
-            	
+            	return new StockReportCommand(request, response);    	
             case 11:
-            	return new ReshelveReportCommand(new ReportService(productDAO, shelfDAO));
+            	return new ReshelveReportCommand(request, response);
             default:
                 return null;
         }
