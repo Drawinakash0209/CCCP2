@@ -1,5 +1,7 @@
 package cccp.service;
 
+import java.util.List;
+
 import cccp.ShelfRestockListener;
 import cccp.model.Batch;
 import cccp.model.Product;
@@ -29,6 +31,25 @@ public class ProductService implements ProductServiceInterface, ShelfRestockList
 		}
 		
 	}
+	
+	public void addProduct(Product product) {
+		productDAO.addItem(product);
+	}
+	
+	public void updateProduct(Product product) {
+		productDAO.updateItem(product);
+	}
+	
+	public void deleteProduct(String productId) {
+		productDAO.removeItem(productId);
+	}
+	
+	
+	public List<Product> getAllProducts() {
+		return productDAO.getAllProducts();
+	}
+	
+	
 
 	@Override
 	public void onShelfRestocked(String productId) {

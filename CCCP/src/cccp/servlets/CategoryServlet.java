@@ -5,28 +5,27 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
 import cccp.model.Category;
-import cccp.model.dao.CategoryDAO;
+import cccp.service.categoryService;
 
-/**
- * Servlet implementation class CategoryServlet
- */
+
 @WebServlet("/CategoryServlet")
 public class CategoryServlet extends HttpServlet {
-    private static final long serialVersionUID = 1L;
-    private final CategoryDAO categoryDAO = new CategoryDAO(); 
+
+
+    private final categoryService categoryService = new categoryService(); // Using service layer
 
     public CategoryServlet() {
         super();
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        List<Category> categories = categoryDAO.viewAllItemsGUI(); // Retrieve categories from database
-        System.out.println("Categories: " + categories); // Print categories to console
+        List<Category> categories = categoryService.getAllCategories(); // Delegate to service layer
         request.setAttribute("categories", categories); // Set the categories as request attribute
         request.getRequestDispatcher("category.jsp").forward(request, response); // Forward to JSP
     }
@@ -36,8 +35,7 @@ public class CategoryServlet extends HttpServlet {
 
         if ("create".equals(action)) {
             String categoryName = request.getParameter("categoryName");
-            Category category = new Category(0, categoryName);
-            int result = categoryDAO.addItem(category);
+            int result = categoryService.createCategory(categoryName); // Delegate to service layer
             if (result == 1) {
                 response.sendRedirect("CategoryServlet");
             } else {
@@ -47,12 +45,11 @@ public class CategoryServlet extends HttpServlet {
         } else if ("update".equals(action)) {
             int id = Integer.parseInt(request.getParameter("id"));
             String categoryName = request.getParameter("categoryName");
-            Category category = new Category(id, categoryName);
-            categoryDAO.updateItem(category);
+            categoryService.updateCategory(id, categoryName); // Delegate to service layer
             response.sendRedirect("CategoryServlet");
         } else if ("delete".equals(action)) {
             int id = Integer.parseInt(request.getParameter("id"));
-            categoryDAO.removeItem(id);
+            categoryService.deleteCategory(id); // Delegate to service layer
             response.sendRedirect("CategoryServlet");
         } else {
             doGet(request, response); // Delegate other POST requests to GET request

@@ -1,18 +1,26 @@
 package cccp.command;
 
 import cccp.controller.BillController;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class BillCommand implements Command {
+	private final HttpServletRequest request;
+	private final HttpServletResponse response;
+
 	
-	private BillController billController;
-	
-	public BillCommand(BillController billController) {
-		this.billController = billController;
+	public BillCommand(HttpServletRequest request, HttpServletResponse response) {
+		this.request = request;
+		this.response = response;
 	}
 
 	@Override
 	public void execute() {
-		billController.run();
+		try {
+			request.getRequestDispatcher("BillServlet").forward(request, response);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 }

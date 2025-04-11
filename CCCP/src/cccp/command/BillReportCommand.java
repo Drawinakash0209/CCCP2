@@ -19,9 +19,6 @@ public class BillReportCommand implements Command {
 
     @Override
     public void execute() {
-//        BillReport billReport = reportService.generateAllBillReports();
-//        billReport.display();
-    	
     	try {
     		BillReport billReport = reportService.generateAllBillReports();
 			request.setAttribute("bills", billReport.getBills());

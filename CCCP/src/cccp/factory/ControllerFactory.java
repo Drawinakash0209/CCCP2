@@ -57,10 +57,8 @@ public class ControllerFactory {
             	return new ShelfCommand(request, response);
             case 5:
             	return new OnlineOrderCommand(request, response);
-            case 6:
-                ShelfService shelfService2 = new ShelfService(batchDAO, shelfDAO);
-                BillingService billingService2 = new BillingService(billDAO, productDAO, shelfService2, saleDAO);
-                return new BillCommand(new BillController(new BillView(billingService2), billingService2, productDAO));
+            case 6:            	
+            	return new BillCommand(request, response);
             case 7:
                 return new BillReportCommand(request, response);
             case 8:

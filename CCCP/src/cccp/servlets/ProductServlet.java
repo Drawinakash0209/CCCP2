@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.util.List;
 
 import cccp.model.Product;
+import cccp.model.dao.BatchDAO;
 import cccp.model.dao.ProductDAO;
+import cccp.service.ProductService;
 
 /**
  * Servlet implementation class ProductServlet
@@ -17,13 +19,18 @@ import cccp.model.dao.ProductDAO;
 @WebServlet("/ProductServlet")
 public class ProductServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	private final ProductDAO productDAO = new ProductDAO();
+//	private final ProductDAO productDAO = new ProductDAO();
+	private final ProductService productService;
+	
        
     /**
      * @see HttpServlet#HttpServlet()
      */
     public ProductServlet() {
         super();
+        ProductDAO productDAO = new ProductDAO();
+        BatchDAO batchDAO = new BatchDAO();
+        this.productService = new ProductService(productDAO, batchDAO);
         // TODO Auto-generated constructor stub
     }
 
@@ -32,7 +39,7 @@ public class ProductServlet extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
-		List<Product> products = productDAO.viewAllItemsGUI();
+		List<Product> products = productService.getAllProducts();
 		request.setAttribute("products", products);
 		request.getRequestDispatcher("product.jsp").forward(request, response);
 	}
@@ -59,7 +66,7 @@ public class ProductServlet extends HttpServlet {
 					.setCategoryId(categoryId)
 					.setReorderLevel(reorderLevel)
 					.build();
-			productDAO.addItem(product);
+			productService.addProduct(product);
 			response.sendRedirect("ProductServlet");
 			}else if("update".equals(action)) {
 				String id = request.getParameter("id");
@@ -75,11 +82,11 @@ public class ProductServlet extends HttpServlet {
 						.setCategoryId(categoryId)
 						.setReorderLevel(reorderLevel)
 						.build();
-				productDAO.updateItem(product);
+				productService.updateProduct(product);
 				response.sendRedirect("ProductServlet");
 				}else if("delete".equals(action)) {
 					String id = request.getParameter("id");
-					productDAO.removeItem(id);
+					productService.deleteProduct(id);
 					response.sendRedirect("ProductServlet");
 				}else {
 					doGet(request, response);
