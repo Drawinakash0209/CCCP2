@@ -23,7 +23,7 @@ public class CategoryServlet extends HttpServlet {
     public CategoryServlet() {
         super();
     }
-
+//test
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         List<Category> categories = categoryService.getAllCategories(); // Delegate to service layer
         request.setAttribute("categories", categories); // Set the categories as request attribute
