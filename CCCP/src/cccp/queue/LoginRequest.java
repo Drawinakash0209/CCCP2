@@ -1,14 +1,18 @@
 package cccp.queue;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class LoginRequest {
-	public HttpServletRequest request;
-	public HttpServletRequest response;
-	
-	public LoginRequest(HttpServletRequest request, HttpServletRequest response) {
-		this.request = request;
-		this.response = response;
-	}
+    private final String username;
+    private final String password;
 
+    public LoginRequest(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
+    public String getUsername() { return username; }
+    public String getPassword() { return password; }
 }
+

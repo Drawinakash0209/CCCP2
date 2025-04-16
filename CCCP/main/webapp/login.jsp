@@ -25,7 +25,6 @@
             </form>
             <div class="my-6 text-center">
                 <span class="text-gray-600"><a href="register.jsp">Or create an account</a></span>
-               
             </div>
             <div class="text-center mt-6">
                 <p class="text-xs text-gray-600">
