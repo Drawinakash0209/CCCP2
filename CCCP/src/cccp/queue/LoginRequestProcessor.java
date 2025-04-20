@@ -14,53 +14,20 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 public class LoginRequestProcessor {
+    private static final int THREAD_POOL_SIZE = 5; // Fixed number of threads
     private static final BlockingQueue<LoginRequest> queue = new LinkedBlockingQueue<>();
-    // Store login results: username -> {status: "success"/"failed", userType: "employee"/"customer"/null}
     private static final ConcurrentHashMap<String, LoginResult> loginResults = new ConcurrentHashMap<>();
 
     static {
-        Thread processorThread = new Thread(() -> {
-            while (true) {
-                try {
-                    LoginRequest req = queue.take();
-                    handleLogin(req);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        processorThread.setDaemon(true);
-        processorThread.start();
+        for (int i = 0; i < THREAD_POOL_SIZE; i++) {
+            Thread worker = new Thread(new LoginWorker(), "LoginWorker-" + i);
+            worker.setDaemon(true);
+            worker.start();
+        }
     }
 
     public static void addLoginRequest(LoginRequest req) {
-        queue.offer(req); //insert into the queue
-    }
-
-    private static void handleLogin(LoginRequest loginRequest) {
-        String username = loginRequest.getUsername();
-        String password = loginRequest.getPassword();
-
-        User user = new UserDAO().getUserByUsername(username);
-        LoginResult result = new LoginResult();
-
-        if (user != null) {
-            AuthenticationStrategy strategy = AuthenticationFactory.getAuthenticationStrategy(user.getUserType());
-            if (strategy.authentication(user, password)) { // Fixed method name to match typical naming
-                result.status = "success";
-                result.userType = user.getUserType();
-                result.user = user;
-                System.out.println("✅ User logged in successfully: " + username);
-            } else {
-                result.status = "failed";
-                System.out.println("❌ Login failed for user: " + username);
-            }
-        } else {
-            result.status = "failed";
-            System.out.println("❌ User not found: " + username);
-        }
-
-        loginResults.put(username, result);
+        queue.offer(req);
     }
 
     public static LoginResult getLoginResult(String username) {
@@ -69,6 +36,46 @@ public class LoginRequestProcessor {
 
     public static void clearLoginResult(String username) {
         loginResults.remove(username);
+    }
+
+    private static class LoginWorker implements Runnable {
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    LoginRequest req = queue.take(); // Waits if queue is empty
+                    handleLogin(req);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        private void handleLogin(LoginRequest loginRequest) {
+            String username = loginRequest.getUsername();
+            String password = loginRequest.getPassword();
+
+            User user = new UserDAO().getUserByUsername(username);
+            LoginResult result = new LoginResult();
+
+            if (user != null) {
+                AuthenticationStrategy strategy = AuthenticationFactory.getAuthenticationStrategy(user.getUserType());
+                if (strategy.authentication(user, password)) {
+                    result.status = "success";
+                    result.userType = user.getUserType();
+                    result.user = user;
+                    System.out.println("✅ [Thread: " + Thread.currentThread().getName() + "] Logged in: " + username);
+                } else {
+                    result.status = "failed";
+                    System.out.println("❌ [Thread: " + Thread.currentThread().getName() + "] Incorrect password: " + username);
+                }
+            } else {
+                result.status = "failed";
+                System.out.println("❌ [Thread: " + Thread.currentThread().getName() + "] User not found: " + username);
+            }
+
+            loginResults.put(username, result);
+        }
     }
 
     // Inner class to hold login result
