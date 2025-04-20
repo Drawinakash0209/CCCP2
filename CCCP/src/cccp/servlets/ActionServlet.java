@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-import cccp.command.Command;
 import cccp.factory.ControllerFactory;
 import cccp.model.dao.BatchDAO;
 import cccp.model.dao.BillDAO;
@@ -21,64 +20,62 @@ import cccp.model.dao.ShelfDAO;
  */
 @WebServlet("/ActionServlet")
 public class ActionServlet extends HttpServlet {
-	private static final long serialVersionUID = 1L;
-	private ControllerFactory controllerFactory;
-	
-	@Override
-	public void init() throws ServletException {
-		controllerFactory = new ControllerFactory(
-				null,
-				new BatchDAO(),
-				new ShelfDAO(),
-	            new ProductDAO(),
-	            new SaleDAO(),
-	            new BillDAO(),
-	            new OnlineInventoryDAO()
-				);
-	}
-       
+    private static final long serialVersionUID = 1L;
+    private ControllerFactory controllerFactory;
+
+    @Override
+    public void init() throws ServletException {
+        // Initialize ControllerFactory with DAO instances
+        controllerFactory = new ControllerFactory(
+                new BatchDAO(),
+                new ShelfDAO(),
+                new ProductDAO(),
+                new SaleDAO(),
+                new BillDAO(),
+                new OnlineInventoryDAO()
+        );
+    }
+
     /**
-     * @see HttpServlet#HttpServlet()
+     * Constructor
      */
     public ActionServlet() {
         super();
-        // TODO Auto-generated constructor stub
     }
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
-	}
+    /**
+     * Handles GET requests by redirecting to a default page (e.g., dashboard or error)
+     */
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Redirect to a default page (e.g., dashboard or error page)
+        response.sendRedirect("dashboard.jsp"); // Update with your desired page
+    }
 
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String optionParam = request.getParameter("option");
-		
-		try {
-			int option = Integer.parseInt(optionParam);
-			
-			if (option < 1 || option > 11) {
-				response.sendRedirect("error.jsp");
-				return;
-			}
-			
-			Command command = controllerFactory.getCommand(option, request, response);
-			if (command != null) {
-				command.execute();
-			}else {
-				response.sendRedirect("error.jsp");
-			}
-			
-		}catch (NumberFormatException e) {
-			response.sendRedirect("error.jsp");
-		}
-		// TODO Auto-generated method stub
-//		doGet(request, response);
-	}
+    /**
+     * Handles POST requests by processing the command option through ControllerFactory
+     */
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String optionParam = request.getParameter("option");
 
+        try {
+            int option = Integer.parseInt(optionParam);
+
+            // Validate option (1 to 11 based on your command options)
+            if (option < 1 || option > 11) {
+                response.sendRedirect("error.jsp");
+                return;
+            }
+
+            // Process the command using ControllerFactory
+            controllerFactory.processCommand(option, request, response);
+
+        } catch (NumberFormatException e) {
+            // Handle invalid option format
+            response.sendRedirect("error.jsp");
+        } catch (Exception e) {
+            // Handle any other exceptions (e.g., timeout, command failure)
+            e.printStackTrace();
+            response.sendRedirect("error.jsp");
+        }
+    }
 }

@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Scanner;
+import java.util.UUID;
 
 import cccp.ReportService;
 import cccp.SaleReport;
@@ -17,11 +18,13 @@ import jakarta.servlet.http.HttpServletResponse;
 public class SalesReportCommand implements Command {
 	private final HttpServletRequest request;
 	private final HttpServletResponse response;
+	private String resultKey;
 	
 	
 	public SalesReportCommand(HttpServletRequest request, HttpServletResponse response) {
 		this.request = request;
 		this.response = response;
+		this.resultKey = UUID.randomUUID().toString();
 	}
 
 	@Override
@@ -32,6 +35,12 @@ public class SalesReportCommand implements Command {
 			e.printStackTrace();
 		}
     }
+
+	@Override
+	public String getResultKey() {
+		// TODO Auto-generated method stub
+		return resultKey;
+	}
 
 }
 

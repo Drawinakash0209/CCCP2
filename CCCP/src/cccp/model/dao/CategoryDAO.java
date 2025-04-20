@@ -12,17 +12,16 @@ import cccp.database.DatabaseConnection;
 import cccp.model.Category;
 
 public class CategoryDAO{
+	private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
 
-    private Connection getConnection() {
-        return DatabaseConnection.getInstance().getConnection();
-    }
 
     // Create category using a Category object
     public int addItem(Category category) {
     	int result = 0;
         String query = "INSERT INTO categories (name) VALUES (?)";
 
-        try (PreparedStatement pst = getConnection().prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection connection = databaseConnection.getConnection();
+        	PreparedStatement pst = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             pst.setString(1, category.getName());
             int rows = pst.executeUpdate();
 
@@ -39,7 +38,9 @@ public class CategoryDAO{
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally {
+			databaseConnection.closeConnection();
+		}
         
         return result;
     }
@@ -47,7 +48,9 @@ public class CategoryDAO{
     // Search category by ID and return a Category object
     public Category searchCategory(int categoryId) {
         String query = "SELECT * FROM categories WHERE id = ?";
-        try (PreparedStatement pst = getConnection().prepareStatement(query)) {
+        try (
+        	Connection connection = databaseConnection.getConnection();
+        	PreparedStatement pst = connection.prepareStatement(query)) {
             pst.setInt(1, categoryId);
 
             try (ResultSet rs = pst.executeQuery()) {
@@ -65,7 +68,9 @@ public class CategoryDAO{
     // Display all categories
     public void viewAllItems() {
         String query = "SELECT * FROM categories";
-        try (Statement stmt = getConnection().createStatement();
+        try (
+        	Connection connection = databaseConnection.getConnection();
+        	Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(query)) {
 
             System.out.println("All categories:");
@@ -79,6 +84,8 @@ public class CategoryDAO{
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+        	databaseConnection.closeConnection();
         }
     }
     
@@ -87,8 +94,10 @@ public class CategoryDAO{
     public List<Category> viewAllItemsGUI() {
         List<Category> categories = new ArrayList<>();
         String query = "SELECT * FROM categories";
-        try (Statement stmt = getConnection().createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
+        try (
+        	Connection connection = databaseConnection.getConnection();
+        	Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery(query)) {
 
             while (rs.next()) {
                 int id = rs.getInt("id");
@@ -105,7 +114,9 @@ public class CategoryDAO{
     // Edit category using a Category object
     public void updateItem(Category category) {
         String query = "UPDATE categories SET name = ? WHERE id = ?";
-        try (PreparedStatement pst = getConnection().prepareStatement(query)) {
+        try (
+        	Connection connection = databaseConnection.getConnection();
+        	PreparedStatement pst = connection.prepareStatement(query)) {
             pst.setString(1, category.getName());
             pst.setInt(2, category.getId());
 
@@ -117,13 +128,17 @@ public class CategoryDAO{
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally {
+			databaseConnection.closeConnection();
+		}
     }
 
     // Delete category by ID - 1
     public void removeItem(int categoryId) {
         String query = "DELETE FROM categories WHERE id = ?";
-        try (PreparedStatement pst = getConnection().prepareStatement(query)) {
+        try (
+        	Connection connection = databaseConnection.getConnection();
+        	PreparedStatement pst = connection.prepareStatement(query)) {
             pst.setInt(1, categoryId);
 
             int rowsAffected = pst.executeUpdate();
@@ -134,6 +149,8 @@ public class CategoryDAO{
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        }finally {
+        	databaseConnection.closeConnection();
         }
     }
 }

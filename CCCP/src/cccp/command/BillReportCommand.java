@@ -1,5 +1,7 @@
 package cccp.command;
 
+import java.util.UUID;
+
 import cccp.BillReport;
 import cccp.ReportService;
 import cccp.model.dao.BillDAO;
@@ -10,11 +12,13 @@ public class BillReportCommand implements Command {
     private ReportService reportService;
     private final HttpServletRequest request;
 	private final HttpServletResponse response;
+		private String resultKey;
 
     public BillReportCommand(HttpServletRequest request, HttpServletResponse response) {
         this.reportService = new ReportService(new BillDAO());
         this.request = request;
         this.response = response;
+        this.resultKey = UUID.randomUUID().toString(); // Default result key
     }
 
     @Override
@@ -27,4 +31,10 @@ public class BillReportCommand implements Command {
 			e.printStackTrace();
     	}
     }
+
+	@Override
+	public String getResultKey() {
+		// TODO Auto-generated method stub
+		return 	resultKey;
+	}
 }

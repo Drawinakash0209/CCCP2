@@ -12,14 +12,13 @@ import cccp.database.DatabaseConnection;
 import cccp.model.Sale;
 
 public class SaleDAO implements SaleDAOInterface{
-	private Connection getConnection() {
-        return DatabaseConnection.getInstance().getConnection();
-    }
-
+	private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
 
 	public void addSale(Sale sale) {
 		String query = "INSERT INTO sales (product_code, quantity_sold, total_revenue, sales_date, sale_type) VALUES (?,?,?,?,?)";
-		try(PreparedStatement pst = getConnection().prepareStatement(query)){
+		try(
+			Connection connection = databaseConnection.getConnection();
+			PreparedStatement pst = connection.prepareStatement(query)){
 			pst.setString(1, sale.getProductCode());
 			pst.setInt(2, sale.getQuantitySold());
 			pst.setDouble(3, sale.getTotalRevenue());
@@ -28,6 +27,8 @@ public class SaleDAO implements SaleDAOInterface{
 			pst.executeUpdate();
 		}catch(SQLException e) {
 			e.printStackTrace();
+		} finally {
+			databaseConnection.closeConnection();
 		}
 		
 	}
@@ -35,7 +36,9 @@ public class SaleDAO implements SaleDAOInterface{
 	public List<Sale> getSalesByDate(Date date) {
 	    List<Sale> sales = new ArrayList<>();
 	    String query = "SELECT * FROM sales WHERE sales_date = ?";
-	    try (PreparedStatement pst = getConnection().prepareStatement(query)) {
+	    try (
+	    	Connection connection = databaseConnection.getConnection();
+	    	PreparedStatement pst = connection.prepareStatement(query)) {
 	        pst.setDate(1, new java.sql.Date(date.getTime())); 
 	        try (ResultSet rs = pst.executeQuery()) {
 	            while (rs.next()) {
@@ -45,6 +48,8 @@ public class SaleDAO implements SaleDAOInterface{
 	        }
 	    } catch (SQLException e) {
 	        e.printStackTrace();
+	    } finally {
+	    	databaseConnection.closeConnection();
 	    }
 	    return sales;
 	}

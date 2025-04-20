@@ -9,9 +9,9 @@ public class DatabaseConnection {
 	//private static variable to hold single instance, and volatile for thread safety
 	private static volatile DatabaseConnection instance;
 	
-	//private variable to DB connection
-	private Connection connection;
-	
+	private final ThreadLocal<Connection> threadLocalConnection = new ThreadLocal<>();
+
+		
 	
 	private static final String URL = "jdbc:mysql://127.0.0.1:3306/syos";
     private static final String USER = "root";
@@ -19,26 +19,49 @@ public class DatabaseConnection {
 		
 	//constructor is private which blocked instantation from outside
     private DatabaseConnection() {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver"); // Load MySQL driver
-            connection = DriverManager.getConnection(URL, USER, PASSWORD);
-        } catch (ClassNotFoundException | SQLException e) {
-            throw new RuntimeException("Connection to Database Failed", e);
-        }
+    	try {
+    		Class.forName("com.mysql.cj.jdbc.Driver");
+    	}catch (ClassNotFoundException e) {
+			throw new RuntimeException("MySQL JDBC Driver not found", e);
+		}
     }
-
-    public static DatabaseConnection getInstance() {
-        if (instance == null) {
-            instance = new DatabaseConnection();
-        }
-        return instance;
-    }
-	
-	//Method to get the DB connection
-	public Connection getConnection() {
-		return connection;
+ 
+ //Thread safe method to get the connection
+    	public static DatabaseConnection getInstance() {
+		if (instance == null) {
+			synchronized (DatabaseConnection.class) {
+				if (instance == null) {
+					instance = new DatabaseConnection();
+				}
+			}
+		}
+		return instance;
 	}
 	
+
+    	//Method to get the connection
+    	public Connection getConnection() throws SQLException {
+    		Connection connection = threadLocalConnection.get();
+    		if (connection == null || connection.isClosed()) {
+    			connection = DriverManager.getConnection(URL, USER, PASSWORD);
+    			threadLocalConnection.set(connection);
+			}
+    		return connection;
+    	}
+    	
+    	//Method to close the connection
+    	public void closeConnection() {
+			Connection connection = threadLocalConnection.get();
+			if (connection != null) {
+				try {
+					connection.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				} finally {
+					threadLocalConnection.remove();
+				}
+			}
+		}
 	
 	
 	

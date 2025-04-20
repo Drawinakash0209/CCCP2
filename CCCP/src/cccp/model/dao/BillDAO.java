@@ -10,20 +10,18 @@ import java.util.List;
 
 import cccp.database.DatabaseConnection;
 import cccp.model.Bill;
+import cccp.model.Bill.BillItem;
 
 public class BillDAO implements BillDAOInterface {
-	
-	// Helper method to get the database connection
-    private Connection getConnection() {
-        return DatabaseConnection.getInstance().getConnection();
-    }
+		private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
     
     public void addBill(Bill bill) {
         String insertBillQuery = "INSERT INTO Bill (bill_id, bill_date, total_price, cash_tendered, change_amount) VALUES (?, ?, ?, ?, ?)";
         PreparedStatement pstmt = null;
 
         try {
-            pstmt = getConnection().prepareStatement(insertBillQuery);
+        	Connection connection = databaseConnection.getConnection();
+            pstmt = connection.prepareStatement(insertBillQuery);
             pstmt.setInt(1, bill.getBillId());
             pstmt.setDate(2, new java.sql.Date(bill.getBillDate().getTime()));
             pstmt.setDouble(3, bill.getTotalPrice());
@@ -45,6 +43,7 @@ public class BillDAO implements BillDAOInterface {
             } catch (SQLException e) {
                 System.err.println("Error closing PreparedStatement: " + e.getMessage());
             }
+            databaseConnection.closeConnection();
         }
     }
      
@@ -53,7 +52,8 @@ public class BillDAO implements BillDAOInterface {
         PreparedStatement pstmt = null;
 
         try {
-            pstmt = getConnection().prepareStatement(insertBillItemQuery);
+        	Connection connection = databaseConnection.getConnection();
+            pstmt = connection.prepareStatement(insertBillItemQuery);
             for (Bill.BillItem item : billItems) {
                 pstmt.setInt(1, billId);
                 pstmt.setString(2, item.getProductCode());
@@ -74,6 +74,8 @@ public class BillDAO implements BillDAOInterface {
             } catch (SQLException e) {
                 System.err.println("Error closing PreparedStatement: " + e.getMessage());
             }
+            
+            databaseConnection.closeConnection();
         }
     }
 
@@ -81,7 +83,9 @@ public class BillDAO implements BillDAOInterface {
     public int getNextBillId() {
         String query = "SELECT MAX(bill_id) AS max_id FROM Bill";
 
-        try (PreparedStatement pst = getConnection().prepareStatement(query); ResultSet rs = pst.executeQuery()) {
+        try (
+        	Connection connection = databaseConnection.getConnection();
+        	PreparedStatement pst = connection.prepareStatement(query); ResultSet rs = pst.executeQuery()) {
             if (rs.next()) {
                 int maxId = rs.getInt("max_id");
                 return rs.wasNull() ? 1 : maxId + 1;
@@ -89,60 +93,88 @@ public class BillDAO implements BillDAOInterface {
         } catch (SQLException e) {
             System.err.println("Error fetching next bill ID: " + e.getMessage());
             e.printStackTrace();
-        }
+        } finally {
+			databaseConnection.closeConnection();
+		}
         return 1; // Default to 1 if query fails or no bills exist
     }
     
     
-    public List<Bill> generateAllBillReports(){
-    	List<Bill> bills = new ArrayList<Bill>();
-    	String query = "SELECT * FROM bill";
-    	try(PreparedStatement pst = getConnection().prepareStatement(query); 
-    			ResultSet rs = pst.executeQuery()){
-    		while(rs.next()) {
-    			int billId = rs.getInt("bill_Id");
-    			
-    			List<Bill.BillItem> billItems = getBillItemsById(billId);
-    			
-    			Bill bill = new Bill.BillBuilder()
-    					.setBillId(billId)
-    					.setBillDate(rs.getDate("bill_date"))
-    					.setTotalPrice(rs.getDouble("total_price"))
-    					.setCashTendered(rs.getDouble("cash_tendered"))
-    					.setchangeAmount(rs.getDouble("change_amount"))
-    					.build();
-    			
-    			Bill.BillBuilder billBuilder = new Bill.BillBuilder()
-    					.setBillId(bill.getBillId())
-    					.setBillDate(bill.getBillDate())
-    					.setTotalPrice(bill.getTotalPrice())
-    					.setCashTendered(bill.getCashTendered())
-    					.setchangeAmount(bill.getChangeAmount());
-    			
-    			for(Bill.BillItem billItem : billItems) {
-    				billBuilder.addBillItem(billItem);
-    			}
-    			
-    			bill = billBuilder.build();
-    			
-    			bills.add(bill);
-    		}
-    	}
-    	catch(SQLException e) {
-    		e.printStackTrace();
-    	}
-    	
-    	return bills;
+    public List<Bill> generateAllBillReports() {
+        List<Bill> bills = new ArrayList<>();
+        String query = "SELECT * FROM bill";
+
+        try (Connection connection = databaseConnection.getConnection();
+             PreparedStatement pst = connection.prepareStatement(query);
+             ResultSet rs = pst.executeQuery()) {
+
+            while (rs.next()) {
+                int billId = rs.getInt("bill_Id");
+
+                // Now pass the same connection
+                List<Bill.BillItem> billItems = getBillItemsById(billId, connection);
+
+                Bill.BillBuilder billBuilder = new Bill.BillBuilder()
+                    .setBillId(billId)
+                    .setBillDate(rs.getDate("bill_date"))
+                    .setTotalPrice(rs.getDouble("total_price"))
+                    .setCashTendered(rs.getDouble("cash_tendered"))
+                    .setchangeAmount(rs.getDouble("change_amount"));
+
+                for (Bill.BillItem item : billItems) {
+                    billBuilder.addBillItem(item);
+                }
+
+                bills.add(billBuilder.build());
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            databaseConnection.closeConnection();
+        }
+
+        return bills;
     }
+
     
-    
-    public List<Bill.BillItem> getBillItemsById(int billId){
-    	List<Bill.BillItem> billItems = new ArrayList<>();
+    public List<Bill.BillItem> getBillItemsById(int billId, Connection connection) {
+        List<Bill.BillItem> billItems = new ArrayList<>();
+        String query = "SELECT bi.*, p.name, p.price " +
+                       "FROM billItems bi " +
+                       "JOIN products p ON bi.item_code = p.id " +
+                       "WHERE bi.bill_id = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setInt(1, billId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Bill.BillItem item = Bill.BillItemFactory.createBillItem(
+                        rs.getString("item_code"),
+                        rs.getString("name"),
+                        rs.getInt("quantity"),
+                        rs.getDouble("price"),
+                        rs.getDouble("total_price")
+                    );
+                    billItems.add(item);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return billItems;
+    }
+
+	@Override
+	public List<BillItem> getBillItemsById(int billId) {
+		List<Bill.BillItem> billItems = new ArrayList<>();
     	String query = "SELECT bi.*, p.name, p.price "+
     			"FROM billItems bi " + 
     			"JOIN products p ON bi.item_code = p.id " + 
     			"WHERE bi.bill_id = ? ";
-    	try(PreparedStatement pstmt = getConnection().prepareStatement(query)){
+    	try(
+    		Connection connection = databaseConnection.getConnection();
+    		PreparedStatement pstmt = connection.prepareStatement(query)){
     		pstmt.setInt(1, billId);
     		try(ResultSet rs = pstmt.executeQuery()){
     			while(rs.next()) {
@@ -158,10 +190,10 @@ public class BillDAO implements BillDAOInterface {
     		}
     	} catch(SQLException e) {
     		e.printStackTrace();
-    	}
+    	} 
     	return billItems;
-    	
-    }
+	}
+
     
     
 }

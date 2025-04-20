@@ -12,17 +12,15 @@ import cccp.model.Batch;
 import cccp.model.Product;
 
 public class ProductDAO implements ProductDAOInterface{
-
-    // Helper method to get the database connection
-    private Connection getConnection() {
-        return DatabaseConnection.getInstance().getConnection();
-    }
+	private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
 
     // Creating a new product
     public void addItem(Product product) {
         String query = "INSERT INTO products (id, name, price, category_id, reorder_level) VALUES (?, ?, ?, ?, ?)";
 
-        try (PreparedStatement pst = getConnection().prepareStatement(query)) {
+        try (
+        	Connection connection = databaseConnection.getConnection();
+        	PreparedStatement pst = connection.prepareStatement(query)) {
         	pst.setString(1, product.getId());
             pst.setString(2, product.getName());
             pst.setDouble(3, product.getPrice());
@@ -34,13 +32,18 @@ public class ProductDAO implements ProductDAOInterface{
             System.err.println("Error creating product: " + e.getMessage());
             e.printStackTrace();
         }
+        finally {
+			databaseConnection.closeConnection();
+		}
     }
 
 
  // Retrieve and display all products in a table format
     public void viewAllItems() {
         String productQuery = "SELECT * FROM products";
-        try (Statement stmt = getConnection().createStatement();
+        try (
+        	Connection connection = databaseConnection.getConnection();
+        	Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(productQuery)) {
 
             // Print table header
@@ -71,13 +74,18 @@ public class ProductDAO implements ProductDAOInterface{
         } catch (SQLException e) {
             System.err.println("Error reading products: " + e.getMessage());
             e.printStackTrace();
-        }
+        }	
+		finally {
+			databaseConnection.closeConnection();
+		}
     }
     
     public List<Product> viewAllItemsGUI() {
 		List<Product> products = new ArrayList<>();
 		String productQuery = "SELECT * FROM products";
-		try (Statement stmt = getConnection().createStatement();
+		try (
+			Connection connection = databaseConnection.getConnection();
+			Statement stmt = connection.createStatement();
 			 ResultSet rs = stmt.executeQuery(productQuery)) {
 
 			while (rs.next()) {
@@ -93,6 +101,8 @@ public class ProductDAO implements ProductDAOInterface{
 		} catch (SQLException e) {
 			System.err.println("Error reading products: " + e.getMessage());
 			e.printStackTrace();
+		} finally {
+			databaseConnection.closeConnection();
 		}
 		return products;
 	}
@@ -101,7 +111,9 @@ public class ProductDAO implements ProductDAOInterface{
     public void updateItem(Product product) {
         String query = "UPDATE products SET name = ?, price = ?, category_id = ?, reorder_level = ? WHERE id = ?";
 
-        try (PreparedStatement pst = getConnection().prepareStatement(query)) {
+        try (
+        	Connection connection = databaseConnection.getConnection();
+        	PreparedStatement pst = connection.prepareStatement(query)) {
             pst.setString(1, product.getName());
             pst.setDouble(2, product.getPrice());
             pst.setInt(3, product.getCategoryId());
@@ -112,6 +124,8 @@ public class ProductDAO implements ProductDAOInterface{
         } catch (SQLException e) {
             System.err.println("Error updating product: " + e.getMessage());
             e.printStackTrace();
+        } finally {
+        	databaseConnection.closeConnection();
         }
     }
 
@@ -119,7 +133,9 @@ public class ProductDAO implements ProductDAOInterface{
     public void removeItem(String productId) {
         String query = "DELETE FROM products WHERE id = ?";
 
-        try (PreparedStatement pst = getConnection().prepareStatement(query)) {
+        try (
+        	Connection connection = databaseConnection.getConnection();
+        	PreparedStatement pst = connection.prepareStatement(query)) {
             pst.setString(1, productId);
 
             int rows = pst.executeUpdate();
@@ -127,14 +143,18 @@ public class ProductDAO implements ProductDAOInterface{
         } catch (SQLException e) {
             System.err.println("Error deleting product: " + e.getMessage());
             e.printStackTrace();
-        }
+        } finally {
+			databaseConnection.closeConnection();
+		}
     }
 
     
     public Product searchProductById(String productId) {
         String query = "SELECT * FROM products WHERE id = ?";
 
-        try (PreparedStatement pst = getConnection().prepareStatement(query)) {
+        try (
+        	Connection connection = databaseConnection.getConnection();
+        	PreparedStatement pst = connection.prepareStatement(query)) {
             pst.setString(1, productId);  // Using String for the ID parameter
 
             try (ResultSet rs = pst.executeQuery()) {
@@ -153,6 +173,8 @@ public class ProductDAO implements ProductDAOInterface{
         } catch (SQLException e) {
             System.err.println("Error searching product: " + e.getMessage());
             e.printStackTrace();
+        } finally {
+        	databaseConnection.closeConnection();
         }
         return null;  // Return null if no product is found with the given ID
     }
@@ -160,7 +182,9 @@ public class ProductDAO implements ProductDAOInterface{
     
     public Product getProductById(String productId) {
         String query = "SELECT * FROM products WHERE id = ?";
-        try (PreparedStatement pst = getConnection().prepareStatement(query)) {
+        try (
+        	Connection connection = databaseConnection.getConnection();
+        	PreparedStatement pst = connection.prepareStatement(query)) {
             pst.setString(1, productId);
             try (ResultSet rs = pst.executeQuery()) {
                 if (rs.next()) {
@@ -178,7 +202,11 @@ public class ProductDAO implements ProductDAOInterface{
         } catch (SQLException e) {
             System.err.println("Error preparing statement: " + e.getMessage());
             e.printStackTrace();
-        }
+        }	
+		finally {
+			databaseConnection.closeConnection();
+		}
+		 // Return null if no product is found with the given ID
         return null;  // Return null if no product is found with the given ID
     }
     
@@ -187,12 +215,16 @@ public class ProductDAO implements ProductDAOInterface{
  // Update the quantity of a product in the database
     public void updateProductQuantity(String productId, int quantity) {
         String query = "UPDATE products SET quantity = ? WHERE id = ?";
-        try (PreparedStatement pst = getConnection().prepareStatement(query)) {
+        try (
+        	Connection connection = databaseConnection.getConnection();
+        	PreparedStatement pst = connection.prepareStatement(query)) {
             pst.setInt(1, quantity);
             pst.setString(2, productId);
             pst.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+        	databaseConnection.closeConnection();
         }
     }
     
@@ -200,7 +232,9 @@ public class ProductDAO implements ProductDAOInterface{
     public List<Product> getProductBelowReorderLevel(){
     	List<Product> products = new ArrayList<>();
     	String query = "SELECT * FROM products WHERE quantity < ?";
-    	try (PreparedStatement pst = getConnection().prepareStatement(query)) {
+    	try (
+    		Connection connection = databaseConnection.getConnection();
+    		PreparedStatement pst = connection.prepareStatement(query)) {
     		pst.setInt(1, 50);
     		try(ResultSet rs = pst.executeQuery()){
     			while(rs.next()) {
@@ -221,7 +255,10 @@ public class ProductDAO implements ProductDAOInterface{
     		
     	} catch(SQLException e) {
     		e.printStackTrace();
-    	}
+    	} 
+		finally {
+			databaseConnection.closeConnection();
+		}
 		return products;
     	
     }
@@ -235,7 +272,10 @@ public class ProductDAO implements ProductDAOInterface{
                        "INNER JOIN batches b ON p.id = b.product_id " +
                        "ORDER BY p.id, b.batch_code";
 
-        try (PreparedStatement pst = getConnection().prepareStatement(query);
+        try (
+        	Connection connection = databaseConnection.getConnection();
+
+        	PreparedStatement pst = connection.prepareStatement(query);
              ResultSet rs = pst.executeQuery()) {
             while (rs.next()) {
 //                String productId = rs.getString("product_id");
@@ -260,7 +300,9 @@ public class ProductDAO implements ProductDAOInterface{
         } catch (SQLException e) {
             System.err.println("Error generating stock report: " + e.getMessage());
             e.printStackTrace();
-        }
+        } finally {
+			databaseConnection.closeConnection();
+		}
         return stockItems;
         
     }
@@ -271,7 +313,10 @@ public class ProductDAO implements ProductDAOInterface{
     	List<Product> products = new ArrayList<>();
     	String query = "SELECT id, name, reorder_level, price FROM products";
     	
-    	 try (PreparedStatement pst = getConnection().prepareStatement(query);
+    	 try (
+    			 Connection connection = databaseConnection.getConnection();
+	
+    			PreparedStatement pst = connection.prepareStatement(query);
                  ResultSet rs = pst.executeQuery()) {
     		 while(rs.next()) {
     			String id = rs.getString("id");
