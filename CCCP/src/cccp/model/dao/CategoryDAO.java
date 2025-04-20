@@ -120,7 +120,7 @@ public class CategoryDAO{
         }
     }
 
-    // Delete category by ID - 
+    // Delete category by ID - 1
     public void removeItem(int categoryId) {
         String query = "DELETE FROM categories WHERE id = ?";
         try (PreparedStatement pst = getConnection().prepareStatement(query)) {
