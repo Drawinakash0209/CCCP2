@@ -2,6 +2,8 @@ package cccp.queue;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import cccp.factory.AuthenticationFactory;
@@ -14,39 +16,42 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 public class LoginRequestProcessor {
-    private static final int THREAD_POOL_SIZE = 5; // Fixed number of threads
-    private static final BlockingQueue<LoginRequest> queue = new LinkedBlockingQueue<>();
-    private static final ConcurrentHashMap<String, LoginResult> loginResults = new ConcurrentHashMap<>();
+    private static final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors(); // Dynamic sizing
+    private static final BlockingQueue<LoginRequest> queue = new LinkedBlockingQueue<>(100);
+    private static final ExecutorService executorService;
 
     static {
+        // Use a cached thread pool or a fixed thread pool with dynamic sizing
+        executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         for (int i = 0; i < THREAD_POOL_SIZE; i++) {
-            Thread worker = new Thread(new LoginWorker(), "LoginWorker-" + i);
-            worker.setDaemon(true);
-            worker.start();
+            executorService.submit(new LoginWorker());
         }
     }
 
     public static void addLoginRequest(LoginRequest req) {
-        queue.offer(req);
+        if(!queue.offer(req)) {
+        	req.getResultFuture().completeExceptionally(new Exception("Queue is full"));
+        }
     }
 
-    public static LoginResult getLoginResult(String username) {
-        return loginResults.get(username);
-    }
-
-    public static void clearLoginResult(String username) {
-        loginResults.remove(username);
+    // Shutdown executor service gracefully
+    public static void shutdown() {
+        executorService.shutdown();
     }
 
     private static class LoginWorker implements Runnable {
         @Override
         public void run() {
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    LoginRequest req = queue.take(); // Waits if queue is empty
+                    LoginRequest req = queue.take();
                     handleLogin(req);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    // Log error properly (e.g., use SLF4J or java.util.logging)
+                    System.err.println("Error processing login: " + e.getMessage());
                 }
             }
         }
@@ -54,10 +59,9 @@ public class LoginRequestProcessor {
         private void handleLogin(LoginRequest loginRequest) {
             String username = loginRequest.getUsername();
             String password = loginRequest.getPassword();
-
-            User user = new UserDAO().getUserByUsername(username);
             LoginResult result = new LoginResult();
 
+            User user = new UserDAO().getUserByUsername(username);
             if (user != null) {
                 AuthenticationStrategy strategy = AuthenticationFactory.getAuthenticationStrategy(user.getUserType());
                 if (strategy.authentication(user, password)) {
@@ -74,11 +78,11 @@ public class LoginRequestProcessor {
                 System.out.println("❌ [Thread: " + Thread.currentThread().getName() + "] User not found: " + username);
             }
 
-            loginResults.put(username, result);
+            // Complete the future with the result
+            loginRequest.getResultFuture().complete(result);
         }
     }
 
-    // Inner class to hold login result
     public static class LoginResult {
         public String status = "pending";
         public String userType = null;

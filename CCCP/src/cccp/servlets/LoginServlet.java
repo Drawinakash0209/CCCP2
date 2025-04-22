@@ -14,9 +14,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 @WebServlet("/login")
 public class LoginServlet extends HttpServlet {
+	
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
@@ -24,50 +26,36 @@ public class LoginServlet extends HttpServlet {
         LoginRequest loginRequest = new LoginRequest(username, password);
         LoginRequestProcessor.addLoginRequest(loginRequest);
 
-        // Poll for login result
-        int maxAttempts = 10; // Limit polling attempts
-        int attempt = 0;
-        LoginResult result = null;
+        try {
+            LoginResult result = loginRequest.getResultFuture().get(5, TimeUnit.SECONDS);
+            System.out.println("Login result for " + username + ": status=" + result.status + ", userType=" + result.userType);
 
-        while (attempt < maxAttempts) {
-            result = LoginRequestProcessor.getLoginResult(username);
-            if (result != null && !"pending".equals(result.status)) {
-                break;
-            }
-            try {
-                Thread.sleep(500); // Wait 500ms before next poll
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ServletException("Interrupted while polling login result", e);
-            }
-            attempt++;
-        }
-
-        // Clean up login result
-        LoginRequestProcessor.clearLoginResult(username);
-
-        if (result == null || "pending".equals(result.status)) {
-            request.setAttribute("loginError", "Login processing timed out. Please try again.");
-            request.getRequestDispatcher("login.jsp").forward(request, response);
-            return;
-        }
-
-        if ("success".equals(result.status)) {
-            HttpSession session = request.getSession();
-            session.setAttribute("user", result.user);
-
-            // Redirect based on user type
-            if ("Employee".equals(result.userType)) {
-                response.sendRedirect("employee_dashboard.jsp");
-            } else if ("Customer".equals(result.userType)) {
-                response.sendRedirect("customer.jsp");
+            if ("success".equals(result.status)) {
+                HttpSession session = request.getSession();
+                session.setAttribute("user", result.user);
+                System.out.println("User authenticated: " + result.user.getUsername() + ", Type: " + result.userType);
+                if ("Employee".equals(result.userType)) {
+                    System.out.println("Redirecting to employee_dashboard.jsp for user: " + result.user.getUsername());
+                    response.sendRedirect("employee_dashboard.jsp");
+                    return;
+                } else if ("Customer".equals(result.userType)) {
+                    System.out.println("Redirecting to customer.jsp for user: " + result.user.getUsername());
+                    response.sendRedirect("customer.jsp");
+                    return;
+                } else {
+                    System.out.println("Unknown user type for user: " + result.user.getUsername());
+                    request.setAttribute("loginError", "Unknown user type");
+                    request.getRequestDispatcher("/login.jsp").forward(request, response);
+                }
             } else {
-                request.setAttribute("loginError", "Invalid user type.");
-                request.getRequestDispatcher("login.jsp").forward(request, response);
+                System.out.println("Login failed for user: " + username + ", Status: " + result.status);
+                request.setAttribute("loginError", "Invalid username or password");
+                request.getRequestDispatcher("/login.jsp").forward(request, response);
             }
-        } else {
-            request.setAttribute("loginError", "Invalid username or password.");
-            request.getRequestDispatcher("login.jsp").forward(request, response);
+        } catch (Exception e) {
+            System.out.println("Login error for " + username + ": " + e.getMessage());
+            request.setAttribute("loginError", "Login failed: " + e.getMessage());
+            request.getRequestDispatcher("/login.jsp").forward(request, response);
         }
     }
 
