@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="cccp.model.Category, cccp.model.dao.CategoryDAO" %>
+<%@ page import="cccp.model.Category, cccp.model.dao.CategoryDAO, java.util.List" %>
 
 <head>
     <meta charset="UTF-8">
@@ -24,7 +24,17 @@
                     <div class="text-2xl py-4 px-6 bg-gray-900 text-white text-center font-bold uppercase">
                         Add New Product
                     </div>
-                    <form class="py-4 px-6" action="ProductServlet" method="POST">
+                    <%
+                        String message = (String) request.getAttribute("message");
+                        if (message != null) {
+                    %>
+                        <div class="text-center py-2 <%= message.startsWith("Error") ? "text-red-500" : "text-green-500" %>">
+                            <%= message %>
+                        </div>
+                    <%
+                        }
+                    %>
+                    <form class="py-4 px-6" action="/CCCP/ActionServlet?option=2" method="POST" enctype="application/x-www-form-urlencoded">
                         <input type="hidden" name="action" value="create">
                         
                         <div class="mb-4">
@@ -46,9 +56,22 @@
                         </div>
                         
                         <div class="mb-4">
-                            <label class="block text-gray-700 font-bold mb-2" for="category_id">Category ID</label>
-                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                                id="category_id" name="category_id" type="number" required placeholder="Enter category ID">
+                            <label class="block text-gray-700 font-bold mb-2" for="category_id">Category</label>
+                            <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                id="category_id" name="category_id" required>
+                                <option value="" disabled selected>Select a category</option>
+                                <%
+                                    CategoryDAO categoryDAO = new CategoryDAO();
+                                    List<Category> categories = categoryDAO.viewAllItemsGUI();
+                                    for (Category category : categories) {
+                                %>
+                                    <option value="<%= category.getId() %>">
+                                        <%= category.getName() %>
+                                    </option>
+                                <%
+                                    }
+                                %>
+                            </select>
                         </div>
                         
                         <div class="mb-4">

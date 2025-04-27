@@ -1,11 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="cccp.model.Product, cccp.model.dao.ProductDAO" %>
-
-<%
-    String productId = request.getParameter("id");
-    ProductDAO productDAO = new ProductDAO();
-    Product product = productDAO.getProductById(productId);
-%>
+<%@ page import="cccp.model.Category, cccp.model.dao.CategoryDAO, cccp.model.Product, cccp.model.dao.ProductDAO, java.util.List" %>
 
 <head>
     <meta charset="UTF-8">
@@ -18,69 +12,113 @@
 <body>
     <div x-data="setup()" :class="{ 'dark': isDark }">
         <div class="min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-white dark:bg-gray-700 text-black dark:text-white">
+            
+            <!-- Header -->
             <jsp:include page="employee_dashboard_header.jsp" />
+            
+            <!-- Sidebar -->
             <jsp:include page="employee_dashboard_sidebar.jsp" />
-
+            
             <div class="h-full ml-14 mt-14 mb-10 md:ml-64">
                 <div class="max-w-md mx-auto mt-10 bg-white shadow-lg rounded-lg overflow-hidden">
                     <div class="text-2xl py-4 px-6 bg-gray-900 text-white text-center font-bold uppercase">
                         Update Product
                     </div>
-                    <form class="py-4 px-6" action="ProductServlet" method="POST">
+                    <%
+                        String productId = request.getParameter("id");
+                        ProductDAO productDAO = new ProductDAO();
+                        Product product = productDAO.getProductById(productId);
+                        if (product == null) {
+                    %>
+                        <div class="text-center py-2 text-red-500">
+                            Product not found.
+                        </div>
+                    <%
+                        } else {
+                            String message = (String) request.getAttribute("message");
+                            if (message != null) {
+                    %>
+                        <div class="text-center py-2 <%= message.startsWith("Error") ? "text-red-500" : "text-green-500" %>">
+                            <%= message %>
+                        </div>
+                    <%
+                            }
+                    %>
+                    <form class="py-4 px-6" action="/CCCP/ActionServlet?option=2" method="POST" enctype="application/x-www-form-urlencoded">
                         <input type="hidden" name="action" value="update">
+                        <input type="hidden" name="id" value="<%= product.getId() %>">
+                        
                         <div class="mb-4">
-                            <label class="block text-gray-700 font-bold mb-2" for="productId">Product ID</label>
-                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="productId" name="id" type="text" value="<%= product.getId() %>" readonly>
+                            <label class="block text-gray-700 font-bold mb-2" for="name">Product Name</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                id="name" name="name" type="text" required placeholder="Enter product name" value="<%= product.getName() %>">
                         </div>
+                        
                         <div class="mb-4">
-                            <label class="block text-gray-700 font-bold mb-2" for="productName">Product Name</label>
-                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="productName" name="name" type="text" value="<%= product.getName() %>" required>
+                            <label class="block text-gray-700 font-bold mb-2" for="price">Price</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                id="price" name="price" type="number" step="0.01" required placeholder="Enter product price" value="<%= product.getPrice() %>">
                         </div>
+                        
                         <div class="mb-4">
-                            <label class="block text-gray-700 font-bold mb-2" for="productPrice">Price</label>
-                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="productPrice" name="price" type="number" step="0.01" value="<%= product.getPrice() %>" required>
+                            <label class="block text-gray-700 font-bold mb-2" for="category_id">Category</label>
+                            <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                id="category_id" name="category_id" required>
+                                <%
+                                    CategoryDAO categoryDAO = new CategoryDAO();
+                                    List<Category> categories = categoryDAO.viewAllItemsGUI();
+                                    for (Category category : categories) {
+                                %>
+                                    <option value="<%= category.getId() %>" <%= category.getId() == product.getCategoryId() ? "selected" : "" %>>
+                                        <%= category.getName() %>
+                                    </option>
+                                <%
+                                    }
+                                %>
+                            </select>
                         </div>
+                        
                         <div class="mb-4">
-                            <label class="block text-gray-700 font-bold mb-2" for="categoryId">Category ID</label>
-                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="categoryId" name="category_id" type="number" value="<%= product.getCategoryId() %>" required>
+                            <label class="block text-gray-700 font-bold mb-2" for="reorder_level">Reorder Level</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                id="reorder_level" name="reorder_level" type="number" required placeholder="Enter reorder level" value="<%= product.getReorderLevel() %>">
                         </div>
-                        <div class="mb-4">
-                            <label class="block text-gray-700 font-bold mb-2" for="reorderLevel">Reorder Level</label>
-                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="reorderLevel" name="reorder_level" type="number" value="<%= product.getReorderLevel() %>" required>
-                        </div>
+                        
                         <div class="flex items-center justify-center mb-4">
                             <button class="bg-gray-900 text-white py-2 px-4 rounded hover:bg-gray-800 focus:outline-none focus:shadow-outline" type="submit">
                                 Update Product
                             </button>
                         </div>
                     </form>
+                    <%
+                        }
+                    %>
                 </div>
             </div>
         </div>
     </div>
-
+    
     <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js" defer></script>
     <script>
         const setup = () => {
             const getTheme = () => {
                 if (window.localStorage.getItem('dark')) {
-                    return JSON.parse(window.localStorage.getItem('dark'))
+                    return JSON.parse(window.localStorage.getItem('dark'));
                 }
-                return !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-            }
-
+                return !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            };
+            
             const setTheme = (value) => {
-                window.localStorage.setItem('dark', value)
-            }
-
+                window.localStorage.setItem('dark', value);
+            };
+            
             return {
-                loading: true,
                 isDark: getTheme(),
                 toggleTheme() {
-                    this.isDark = !this.isDark
-                    setTheme(this.isDark)
+                    this.isDark = !this.isDark;
+                    setTheme(this.isDark);
                 },
-            }
-        }
+            };
+        };
     </script>
 </body>
