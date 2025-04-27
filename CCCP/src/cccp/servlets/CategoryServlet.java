@@ -1,58 +1,73 @@
 package cccp.servlets;
 
+import cccp.model.Category;
+import cccp.service.CategoryService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.List;
-
-import cccp.model.Category;
-import cccp.service.categoryService;
-
 
 @WebServlet("/CategoryServlet")
 public class CategoryServlet extends HttpServlet {
-
-
-    private final categoryService categoryService = new categoryService(); // Using service layer
+    private static final long serialVersionUID = 1L;
+    private final CategoryService categoryService;
 
     public CategoryServlet() {
         super();
+        this.categoryService = new CategoryService();
     }
-//test22
+
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        List<Category> categories = categoryService.getAllCategories(); // Delegate to service layer
-        request.setAttribute("categories", categories); // Set the categories as request attribute
-        request.getRequestDispatcher("category.jsp").forward(request, response); // Forward to JSP
+        try {
+            List<Category> categories = categoryService.getAllCategories();
+            request.setAttribute("categories", categories);
+            request.getRequestDispatcher("category.jsp").forward(request, response);
+        } catch (Exception e) {
+            request.setAttribute("message", "Error: " + e.getMessage());
+            request.getRequestDispatcher("category.jsp").forward(request, response);
+        }
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
-
-        if ("create".equals(action)) {
-            String categoryName = request.getParameter("categoryName");
-            int result = categoryService.createCategory(categoryName); // Delegate to service layer
-            if (result == 1) {
-                response.sendRedirect("CategoryServlet");
-            } else {
-                PrintWriter out = response.getWriter();
-                out.println("Failed to add category");
-            }
-        } else if ("update".equals(action)) {
-            int id = Integer.parseInt(request.getParameter("id"));
-            String categoryName = request.getParameter("categoryName");
-            categoryService.updateCategory(id, categoryName); // Delegate to service layer
-            response.sendRedirect("CategoryServlet");
-        } else if ("delete".equals(action)) {
-            int id = Integer.parseInt(request.getParameter("id"));
-            categoryService.deleteCategory(id); // Delegate to service layer
-            response.sendRedirect("CategoryServlet");
-        } else {
-            doGet(request, response); // Delegate other POST requests to GET request
+        if (action == null) {
+            request.setAttribute("message", "Error: Action parameter is missing.");
+            doGet(request, response);
+            return;
         }
+
+        try {
+            if ("create".equals(action)) {
+                String categoryName = request.getParameter("categoryName");
+                int newId = categoryService.createCategory(categoryName);
+                request.setAttribute("message", "Category added successfully! New ID: " + newId);
+            } else if ("update".equals(action)) {
+                String idStr = request.getParameter("id");
+                String categoryName = request.getParameter("categoryName");
+                if (idStr == null || idStr.trim().isEmpty() || categoryName == null || categoryName.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Category ID and name are required.");
+                }
+                int id = Integer.parseInt(idStr);
+                categoryService.updateCategory(id, categoryName);
+                request.setAttribute("message", "Category updated successfully!");
+            } else if ("delete".equals(action)) {
+                String idStr = request.getParameter("id");
+                if (idStr == null || idStr.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Category ID is required for deletion.");
+                }
+                int id = Integer.parseInt(idStr);
+                categoryService.deleteCategory(id);
+                request.setAttribute("message", "Category deleted successfully!");
+            } else {
+                throw new IllegalArgumentException("Invalid action: " + action);
+            }
+        } catch (Exception e) {
+            request.setAttribute("message", "Error: " + e.getMessage());
+            // Re-throw to ensure CommandProcessor logs the exception
+        }
+        doGet(request, response);
     }
 }

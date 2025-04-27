@@ -26,7 +26,7 @@
                     <h1 class="text-3xl font-bold text-center mb-8">Batch Management</h1>
                 <!-- Add Batch Form -->
 <div class="flex flex-col md:flex-row justify-between items-center mb-6">
-    <form action="BatchServlet" method="post" class="w-full md:w-1/2 mb-4 md:mb-0">
+    <form action="BatchServlet" method="post" enctype="application/x-www-form-urlencoded" class="w-full md:w-1/2 mb-4 md:mb-0">
         <input type="hidden" name="action" value="create">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input type="text" name="product_id" placeholder="Product ID" class="w-full px-4 py-2 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>

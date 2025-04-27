@@ -12,20 +12,26 @@
 <div x-data="setup()" :class="{ 'dark': isDark }">
     <div class="min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-white dark:bg-gray-700 text-black dark:text-white">
     
-    <!--  Header -->
-     <jsp:include page="employee_dashboard_header.jsp" />
+    <!-- Header -->
+    <jsp:include page="employee_dashboard_header.jsp" />
     
+    <!-- Sidebar -->
+    <jsp:include page="employee_dashboard_sidebar.jsp" />
 
-
-    
-     <!-- Sidebar -->
-        <jsp:include page="employee_dashboard_sidebar.jsp" />
-
-    
-      <div class="h-full ml-14 mt-14 mb-10 md:ml-64">
+    <div class="h-full ml-14 mt-14 mb-10 md:ml-64">
       
       <div class="container mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold text-center mb-8">Category Listing</h1>
+
+        <!-- Display Success/Error Message -->
+        <% 
+            String message = (String) request.getAttribute("message");
+            if (message != null) {
+        %>
+        <div class="mb-4 p-4 rounded-md <%= message.contains("Error") ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700" %>">
+            <%= message %>
+        </div>
+        <% } %>
 
         <!-- Search and Add Category -->
         <div class="flex flex-col md:flex-row justify-between items-center mb-6">
@@ -92,34 +98,31 @@
         </div>
     </div>
     
- 
-    
-  
       </div>
     </div>
   </div>    
 
-	  <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js" defer></script>
-	  <script>
-	    const setup = () => {
-	      const getTheme = () => {
-	        if (window.localStorage.getItem('dark')) {
-	          return JSON.parse(window.localStorage.getItem('dark'))
-	        }
-	        return !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-	      }
-	
-	      const setTheme = (value) => {
-	        window.localStorage.setItem('dark', value)
-	      }
-	
-	      return {
-	        loading: true,
-	        isDark: getTheme(),
-	        toggleTheme() {
-	          this.isDark = !this.isDark
-	          setTheme(this.isDark)
-	        },
-	      }
-	    }
-	  </script>
+  <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js" defer></script>
+  <script>
+    const setup = () => {
+      const getTheme = () => {
+        if (window.localStorage.getItem('dark')) {
+          return JSON.parse(window.localStorage.getItem('dark'))
+        }
+        return !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      }
+
+      const setTheme = (value) => {
+        window.localStorage.setItem('dark', value)
+      }
+
+      return {
+        loading: true,
+        isDark: getTheme(),
+        toggleTheme() {
+          this.isDark = !this.isDark
+          setTheme(this.isDark)
+        },
+      }
+    }
+  </script>

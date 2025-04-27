@@ -32,7 +32,7 @@
     <div class="text-2xl py-4 px-6 bg-gray-900 text-white text-center font-bold uppercase">
         Add New Category
     </div>
-    <form class="py-4 px-6" action="CategoryServlet" method="POST">
+    <form class="py-4 px-6" action="/CCCP/ActionServlet?option=1" method="POST" enctype="application/x-www-form-urlencoded">
         <div class="mb-4">
             <label class="block text-gray-700 font-bold mb-2" for="categoryName">
                 Category Name

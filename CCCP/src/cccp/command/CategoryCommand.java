@@ -20,7 +20,6 @@ public class CategoryCommand implements Command {
 	}
 	
 	@Override
-	
 	public void execute() {
         try {
             request.getRequestDispatcher("CategoryServlet").forward(request, response);
