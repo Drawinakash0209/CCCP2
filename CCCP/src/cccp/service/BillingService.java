@@ -1,7 +1,9 @@
 package cccp.service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import cccp.Discount;
 import cccp.model.Bill;
@@ -146,6 +148,20 @@ public class BillingService implements BillingServiceInterface {
 	    
 	    return bill;
 	}
+	
+	  public Bill generateOnlineBill(int customerId, Map<Product, Integer> items) {
+	        List<Bill.BillItem> billItems = new ArrayList<>();
+	        for (Map.Entry<Product, Integer> entry : items.entrySet()) {
+	            Product product = entry.getKey();
+	            int quantity = entry.getValue();
+	            Bill.BillItem billItem = createBillItem(product.getId(), quantity); // Assuming Product has getId()
+	            billItems.add(billItem);
+	        }
+
+	        // Assuming cashTendered equals total price for simplicity (no change)
+	        double totalPrice = billItems.stream().mapToDouble(Bill.BillItem::getTotalPrice).sum();
+	        return createOnlineBill(billItems, totalPrice);
+	    }
 
 	
 	public Bill.BillItem createBillItem(String productId, int quantity){
