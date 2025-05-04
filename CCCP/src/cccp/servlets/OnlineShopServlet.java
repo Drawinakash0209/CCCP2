@@ -1,6 +1,7 @@
 package cccp.servlets;
 
 import cccp.model.Bill;
+import cccp.model.DeliveryDetails;
 import cccp.model.Product;
 import cccp.model.User;
 import cccp.model.dao.*;
@@ -16,7 +17,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +29,7 @@ public class OnlineShopServlet extends HttpServlet {
     private static final BillDAOInterface billDAO = new BillDAO();
     private static final SaleDAOInterface saleDAO = new SaleDAO();
     private static final OnlineInventoryDAOInterface onlineDAO = new OnlineInventoryDAO();
+    private static final DeliveryDetailsDAOInterface deliveryDetailsDAO = new DeliveryDetailsDAO();
     private static final OnlineOrderService onlineOrderService = new OnlineOrderService(batchDAO, onlineDAO);
     private static final BillingServiceInterface billingService = new BillingService(billDAO, productDAO, onlineOrderService, saleDAO);
 
@@ -89,7 +90,10 @@ public class OnlineShopServlet extends HttpServlet {
                     updateCart(request, response);
                     break;
                 case "checkout":
-                    processCheckout(request, response);
+                    initiateCheckout(request, response);
+                    break;
+                case "submitDeliveryDetails":
+                    processDeliveryDetails(request, response);
                     break;
                 default:
                     response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid action");
@@ -200,7 +204,7 @@ public class OnlineShopServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/onlineShop?action=viewCart");
     }
 
-    private void processCheckout(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    private void initiateCheckout(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
         Map<String, Integer> cart = (Map<String, Integer>) session.getAttribute("cart");
@@ -213,6 +217,36 @@ public class OnlineShopServlet extends HttpServlet {
         if (cart == null || cart.isEmpty()) {
             request.setAttribute("errorMessage", "Your cart is empty.");
             request.getRequestDispatcher("cart_view.jsp").forward(request, response);
+            return;
+        }
+
+        request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
+    }
+
+    private void processDeliveryDetails(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
+        Map<String, Integer> cart = (Map<String, Integer>) session.getAttribute("cart");
+
+        if (user == null) {
+            response.sendRedirect("login.jsp?error=Session expired. Please login again.");
+            return;
+        }
+
+        if (cart == null || cart.isEmpty()) {
+            request.setAttribute("errorMessage", "Your cart is empty.");
+            request.getRequestDispatcher("cart_view.jsp").forward(request, response);
+            return;
+        }
+
+        // Collect delivery details
+        String name = request.getParameter("name");
+        String phoneNumber = request.getParameter("phone");
+        String deliveryAddress = request.getParameter("address");
+
+        if (name == null || name.trim().isEmpty() || phoneNumber == null || phoneNumber.trim().isEmpty() || deliveryAddress == null || deliveryAddress.trim().isEmpty()) {
+            request.setAttribute("errorMessage", "Please provide all required delivery details.");
+            request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
             return;
         }
 
@@ -231,22 +265,44 @@ public class OnlineShopServlet extends HttpServlet {
         }
 
         try {
+            // Generate bill
             Bill generatedBill = billingService.generateOnlineBill(user.getId(), itemsToPurchase);
 
             if (generatedBill != null) {
+                // Save delivery details
+                DeliveryDetails deliveryDetails = new DeliveryDetails(
+                    generatedBill.getBillId(),
+                    user.getId(),
+                    name,
+                    phoneNumber,
+                    deliveryAddress
+                );
+                int result = deliveryDetailsDAO.saveDeliveryDetails(deliveryDetails);
+                if (result > 0) {
+                    System.out.println("Delivery details saved for bill ID: " + generatedBill.getBillId());
+                } else {
+                    System.err.println("Failed to save delivery details for bill ID: " + generatedBill.getBillId());
+                    request.setAttribute("errorMessage", "Failed to save delivery details. Please try again.");
+                    request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
+                    return;
+                }
+
+                // Clear cart and forward to bill display
                 session.removeAttribute("cart");
                 request.setAttribute("bill", generatedBill);
+                request.setAttribute("message", "Order placed successfully!");
                 request.getRequestDispatcher("bill_display.jsp").forward(request, response);
             } else {
+                System.err.println("Failed to generate bill for user ID: " + user.getId());
                 request.setAttribute("errorMessage", "Checkout failed. Please try again or contact support.");
-                request.getRequestDispatcher("cart_view.jsp").forward(request, response);
+                request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
             }
 
         } catch (Exception e) {
             System.err.println("Checkout Error: " + e.getMessage());
             e.printStackTrace();
             request.setAttribute("errorMessage", "An error occurred during checkout: " + e.getMessage());
-            request.getRequestDispatcher("cart_view.jsp").forward(request, response);
+            request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
         }
     }
 }
