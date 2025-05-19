@@ -10,11 +10,18 @@
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
+        .message { color: green; }
     </style>
 </head>
 <body>
     <h2>Bill Details</h2>
     <% 
+        String message = (String) request.getAttribute("message");
+        if (message != null && !message.isEmpty()) {
+    %>
+        <p class="message"><%= message %></p>
+    <% 
+        }
         Bill bill = (Bill) request.getAttribute("bill");
         if (bill != null) {
     %>
@@ -45,7 +52,7 @@
                 }
             %>
         </table>
-        <p><strong>Total Price:</strong> <%= bill.getTotalPrice() %></p>
+        <p><strong ascendancy; font-weight: bold;">Total Price: <%= bill.getTotalPrice() %></p>
         <p><strong>Cash Tendered:</strong> <%= bill.getCashTendered() %></p>
         <% 
             if (bill.getDiscount() > 0) {

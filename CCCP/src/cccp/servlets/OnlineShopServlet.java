@@ -5,6 +5,8 @@ import cccp.model.DeliveryDetails;
 import cccp.model.Product;
 import cccp.model.User;
 import cccp.model.dao.*;
+import cccp.queue.CustomerCheckoutProcessor;
+import cccp.queue.OnlineCheckoutRequest;
 import cccp.service.BillingService;
 import cccp.service.BillingServiceInterface;
 import cccp.service.OnlineOrderService;
@@ -239,7 +241,6 @@ public class OnlineShopServlet extends HttpServlet {
             return;
         }
 
-        // Collect delivery details
         String name = request.getParameter("name");
         String phoneNumber = request.getParameter("phone");
         String deliveryAddress = request.getParameter("address");
@@ -264,45 +265,37 @@ public class OnlineShopServlet extends HttpServlet {
             return;
         }
 
-        try {
-            // Generate bill
-            Bill generatedBill = billingService.generateOnlineBill(user.getId(), itemsToPurchase);
+        // Submit checkout request to CustomerCheckoutProcessor
+        OnlineCheckoutRequest checkoutRequest = new OnlineCheckoutRequest(billingService, deliveryDetailsDAO, onlineOrderService,
+                                                                          itemsToPurchase, user, name, phoneNumber, deliveryAddress);
+        CustomerCheckoutProcessor.addCheckoutRequest(checkoutRequest);
 
-            if (generatedBill != null) {
-                // Save delivery details
-                DeliveryDetails deliveryDetails = new DeliveryDetails(
-                    generatedBill.getBillId(),
-                    user.getId(),
-                    name,
-                    phoneNumber,
-                    deliveryAddress
-                );
-                int result = deliveryDetailsDAO.saveDeliveryDetails(deliveryDetails);
-                if (result > 0) {
-                    System.out.println("Delivery details saved for bill ID: " + generatedBill.getBillId());
-                } else {
-                    System.err.println("Failed to save delivery details for bill ID: " + generatedBill.getBillId());
-                    request.setAttribute("errorMessage", "Failed to save delivery details. Please try again.");
-                    request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
-                    return;
-                }
-
-                // Clear cart and forward to bill display
-                session.removeAttribute("cart");
-                request.setAttribute("bill", generatedBill);
-                request.setAttribute("message", "Order placed successfully!");
-                request.getRequestDispatcher("bill_display.jsp").forward(request, response);
-            } else {
-                System.err.println("Failed to generate bill for user ID: " + user.getId());
-                request.setAttribute("errorMessage", "Checkout failed. Please try again or contact support.");
-                request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
+        // Poll for the result
+        CustomerCheckoutProcessor.CheckoutResult result = CustomerCheckoutProcessor.getCheckoutResult(checkoutRequest.getResultKey());
+        int timeoutSeconds = 30; // Increased from 5 to 15 seconds
+        long startTime = System.currentTimeMillis();
+        while ("pending".equals(result.status) && (System.currentTimeMillis() - startTime) < timeoutSeconds * 1000) {
+            try {
+                Thread.sleep(100); // Polling interval
+                result = CustomerCheckoutProcessor.getCheckoutResult(checkoutRequest.getResultKey());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ServletException("Interrupted while waiting for checkout result", e);
             }
+        }
 
-        } catch (Exception e) {
-            System.err.println("Checkout Error: " + e.getMessage());
-            e.printStackTrace();
-            request.setAttribute("errorMessage", "An error occurred during checkout: " + e.getMessage());
+        if ("pending".equals(result.status)) {
+            request.setAttribute("errorMessage", "Checkout processing timed out. Please try again.");
             request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
+        } else if ("failed".equals(result.status)) {
+            request.setAttribute("errorMessage", "Checkout failed: " + result.message);
+            request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
+        } else if ("success".equals(result.status)) {
+            Bill generatedBill = (Bill) result.message;
+            session.removeAttribute("cart");
+            request.setAttribute("bill", generatedBill);
+            request.setAttribute("message", "Order placed successfully!");
+            request.getRequestDispatcher("bill_display.jsp").forward(request, response);
         }
     }
 }
