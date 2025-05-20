@@ -12,17 +12,24 @@
             <div class="text-center">
                 <img src="images/logo.png" class="mx-auto" alt="Logo">
             </div>
-            <form action="login" method="post">
+            <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="mb-6">
-                    <input type="text" name="username" class="w-full p-4 rounded-lg bg-gray-100 border border-gray-300 placeholder-gray-500" placeholder="Username" required>
+                    <input type="text" name="username" id="username" class="w-full p-4 rounded-lg bg-gray-100 border border-gray-300 placeholder-gray-500" placeholder="Username" required>
                 </div>
                 <div class="mb-6">
-                    <input type="password" name="password" class="w-full p-4 rounded-lg bg-gray-100 border border-gray-300 placeholder-gray-500" placeholder="Password" required>
+                    <input type="password" name="password" id="password" class="w-full p-4 rounded-lg bg-gray-100 border border-gray-300 placeholder-gray-500" placeholder="Password" required>
                 </div>
                 <div class="mb-6">
-                    <button type="submit" class="w-full py-3 bg-green-400 text-white rounded-lg hover:bg-green-700 focus:outline-none transition duration-300">Sign In</button>
+                    <button type="submit" id="signInButton" class="w-full py-3 bg-green-400 text-white rounded-lg hover:bg-green-700 focus:outline-none transition duration-300 flex justify-center items-center">
+                        <span id="buttonText">Sign In</span>
+                        <svg id="loadingSpinner" class="animate-spin h-5 w-5 ml-2 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"></path>
+                        </svg>
+                    </button>
                 </div>
             </form>
+            <div id="errorMessage" class="text-red-500 text-center mt-4 hidden"></div>
             <div class="my-6 text-center">
                 <span class="text-gray-600"><a href="register.jsp">Or create an account</a></span>
             </div>
@@ -34,10 +41,63 @@
                     <a href="#" class="text-gray-500 underline">Privacy Policy</a>.
                 </p>
             </div>
-            <% if (request.getAttribute("loginError") != null) { %>
-                <p class="text-red-500 text-center mt-4"><%= request.getAttribute("loginError") %></p>
-            <% } %>
         </div>
     </div>
+
+    <script>
+        async function handleLogin(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            // Get form elements
+            const form = document.getElementById('loginForm');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const signInButton = document.getElementById('signInButton');
+            const buttonText = document.getElementById('buttonText');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const errorMessage = document.getElementById('errorMessage');
+
+            // Disable button and show loading spinner
+            signInButton.disabled = true;
+            buttonText.textContent = 'Signing In...';
+            loadingSpinner.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+
+            try {
+                const response = await fetch('login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'username': username,
+                        'password': password
+                    })
+                });
+
+                if (response.redirected) {
+                    // Handle successful redirect
+                    window.location.href = response.url;
+                    return;
+                }
+
+                // If not redirected, assume error
+                const errorText = await response.text();
+                // Extract error message from JSP if present Editorial note: This is a simple approach; you may need to parse the response more robustly
+                const errorMatch = errorText.match(/<p class="text-red-500 text-center mt-4">(.*?)<\/p>/);
+                const errorMsg = errorMatch ? errorMatch[1] : 'Login failed. Please try again.';
+                throw new Error(errorMsg);
+            } catch (error) {
+                // Show error message
+                errorMessage.textContent = error.message;
+                errorMessage.classList.remove('hidden');
+            } finally {
+                // Re-enable button and hide loading spinner
+                signInButton.disabled = false;
+                buttonText.textContent = 'Sign In';
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+    </script>
 </body>
 </html>

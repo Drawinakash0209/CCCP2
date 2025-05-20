@@ -61,8 +61,10 @@ public class ShelfRestockServlet extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 	    String productId = request.getParameter("productId");
 	    String quantityStr = request.getParameter("quantity");
+	    System.out.println("doPost: productId=" + productId + ", quantity=" + quantityStr + ", thread=" + Thread.currentThread().getName());
 
 	    if (productId == null || productId.trim().isEmpty()) {
+	        System.out.println("Validation error: Product ID is required");
 	        request.setAttribute("error", "Product ID is required");
 	        request.getRequestDispatcher("shelfRestock.jsp").forward(request, response);
 	        return;
@@ -72,11 +74,13 @@ public class ShelfRestockServlet extends HttpServlet {
 	    try {
 	        quantity = Integer.parseInt(quantityStr);
 	        if (quantity <= 0) {
+	            System.out.println("Validation error: Quantity must be greater than zero");
 	            request.setAttribute("error", "Quantity must be greater than zero");
 	            request.getRequestDispatcher("shelfRestock.jsp").forward(request, response);
 	            return;
 	        }
 	    } catch (NumberFormatException e) {
+	        System.out.println("Validation error: Invalid quantity");
 	        request.setAttribute("error", "Invalid quantity");
 	        request.getRequestDispatcher("shelfRestock.jsp").forward(request, response);
 	        return;
@@ -84,15 +88,21 @@ public class ShelfRestockServlet extends HttpServlet {
 
 	    BatchSelectionStrategy strategy = new ExpiryBasedSelectionStrategy(new BatchDAO());
 	    try {
+	        System.out.println("Attempting to restock: productId=" + productId + ", quantity=" + quantity);
 	        shelfService.restockShelf(productId, quantity, new java.util.Date(), strategy);
-	        request.setAttribute("success", "Shelf restocked successfully");
+	        System.out.println("Restock successful: productId=" + productId);
+	        request.setAttribute("message", "Shelf restocked successfully");
 	    } catch (IllegalStateException e) {
+	        System.out.println("Restock failed: " + e.getMessage());
 	        request.setAttribute("error", e.getMessage());
+	    } catch (Exception e) {
+	        System.out.println("Unexpected error during restock: " + e.getMessage());
+	        request.setAttribute("error", "Unexpected error: " + e.getMessage());
 	    }
 
 	    shelfService.addRestockListener(productService);
+	    System.out.println("Forwarding to shelfRestock.jsp");
 	    request.getRequestDispatcher("shelfRestock.jsp").forward(request, response);
-		
 	}
 
 }
