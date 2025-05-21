@@ -22,7 +22,8 @@ public class CategoryCommand implements Command {
 	@Override
 	public void execute() {
         try {
-            request.getRequestDispatcher("CategoryServlet").forward(request, response);
+            request.getRequestDispatcher("/CategoryServlet").forward(request, response);
+            
         } catch (Exception e) {
             e.printStackTrace();
         }

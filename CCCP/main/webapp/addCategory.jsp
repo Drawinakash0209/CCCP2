@@ -1,5 +1,11 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+
 <%@ page import="cccp.model.Category, cccp.model.dao.CategoryDAO" %>
+
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="cccp.model.User" %>
+
+
+<html>
 
 
 <head>
@@ -7,8 +13,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Login</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.0/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="css/styles.css">
-    
+    <link rel="stylesheet" type="text/css" href="css/styles.css">   
 </head>
 
 <body>
@@ -86,3 +91,5 @@
       }
     }
   </script>
+  
+  </html>

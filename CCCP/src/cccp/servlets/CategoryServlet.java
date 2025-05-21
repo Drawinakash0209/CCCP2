@@ -33,6 +33,7 @@ public class CategoryServlet extends HttpServlet {
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
+        System.out.println("Action: " + action); // Debugging line
         if (action == null) {
             request.setAttribute("message", "Error: Action parameter is missing.");
             doGet(request, response);

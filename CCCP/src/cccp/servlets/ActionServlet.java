@@ -38,6 +38,9 @@ public class ActionServlet extends HttpServlet {
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String optionParam = request.getParameter("option");
+        System.out.println("ActionServlet: option=" + request.getParameter("option"));
+        System.out.println("ActionServlet: action=" + request.getParameter("action"));
+        System.out.println("ActionServlet: categoryName=" + request.getParameter("categoryName"));
 
         if (optionParam != null) {
             try {
