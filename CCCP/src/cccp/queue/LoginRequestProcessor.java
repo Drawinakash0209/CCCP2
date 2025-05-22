@@ -68,14 +68,14 @@ public class LoginRequestProcessor {
                     result.status = "success";
                     result.userType = user.getUserType();
                     result.user = user;
-                    System.out.println("✅ [Thread: " + Thread.currentThread().getName() + "] Logged in: " + username);
+                    System.out.println("[Thread: " + Thread.currentThread().getName() + "] Logged in: " + username);
                 } else {
                     result.status = "failed";
-                    System.out.println("❌ [Thread: " + Thread.currentThread().getName() + "] Incorrect password: " + username);
+                    System.out.println("[Thread: " + Thread.currentThread().getName() + "] Incorrect password: " + username);
                 }
             } else {
                 result.status = "failed";
-                System.out.println("❌ [Thread: " + Thread.currentThread().getName() + "] User not found: " + username);
+                System.out.println("[Thread: " + Thread.currentThread().getName() + "] User not found: " + username);
             }
 
             // Complete the future with the result

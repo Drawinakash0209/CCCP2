@@ -51,9 +51,7 @@
 
         <!-- Search and Add Category -->
         <div class="flex flex-col md:flex-row justify-between items-center mb-6">
-            <div class="w-full md:w-1/3 mb-4 md:mb-0">
-                <input type="text" placeholder="Search categories..." class="w-full px-4 py-2 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
+          
             <a href="addCategory.jsp">
                 <button class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300">
                     Add New Category

@@ -53,10 +53,10 @@ public class CommandProcessor {
             Command command = cmdRequest.getCommand();
             try {
                 command.execute();
-                System.out.println("✅ [Thread: " + Thread.currentThread().getName() + "] Processed command: " + command.getResultKey());
+                System.out.println("[Thread: " + Thread.currentThread().getName() + "] Processed command: " + command.getResultKey());
             } catch (Exception e) {
                 command.getResultFuture().complete(new CommandResult("failed", "Error processing command: " + e.getMessage()));
-                System.err.println("❌ [Thread: " + Thread.currentThread().getName() + "] Failed to process command: " + command.getResultKey());
+                System.err.println("[Thread: " + Thread.currentThread().getName() + "] Failed to process command: " + command.getResultKey());
                 e.printStackTrace();
             }
         }
