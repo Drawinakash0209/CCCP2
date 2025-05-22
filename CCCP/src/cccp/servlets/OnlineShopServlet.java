@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -229,14 +230,19 @@ public class OnlineShopServlet extends HttpServlet {
         User user = (User) session.getAttribute("user");
         Map<String, Integer> cart = (Map<String, Integer>) session.getAttribute("cart");
 
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        PrintWriter out = response.getWriter();
+
         if (user == null) {
-            response.sendRedirect("login.jsp?error=Session expired. Please login again.");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            out.write("{\"status\":\"error\",\"message\":\"Session expired. Please login again.\"}");
             return;
         }
 
         if (cart == null || cart.isEmpty()) {
-            request.setAttribute("errorMessage", "Your cart is empty.");
-            request.getRequestDispatcher("cart_view.jsp").forward(request, response);
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write("{\"status\":\"error\",\"message\":\"Your cart is empty.\"}");
             return;
         }
 
@@ -245,8 +251,8 @@ public class OnlineShopServlet extends HttpServlet {
         String deliveryAddress = request.getParameter("address");
 
         if (name == null || name.trim().isEmpty() || phoneNumber == null || phoneNumber.trim().isEmpty() || deliveryAddress == null || deliveryAddress.trim().isEmpty()) {
-            request.setAttribute("errorMessage", "Please provide all required delivery details.");
-            request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write("{\"status\":\"error\",\"message\":\"Please provide all required delivery details.\"}");
             return;
         }
 
@@ -259,29 +265,32 @@ public class OnlineShopServlet extends HttpServlet {
         }
 
         if (itemsToPurchase.isEmpty()) {
-            request.setAttribute("errorMessage", "No valid items found in cart to purchase.");
-            request.getRequestDispatcher("cart_view.jsp").forward(request, response);
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write("{\"status\":\"error\",\"message\":\"No valid items found in cart to purchase.\"}");
             return;
         }
 
         OnlineCheckoutRequest checkoutRequest = new OnlineCheckoutRequest(billingService, deliveryDetailsDAO, onlineOrderService,
-                                                                          itemsToPurchase, user, name, phoneNumber, deliveryAddress);
+                itemsToPurchase, user, name, phoneNumber, deliveryAddress);
         CustomerCheckoutProcessor.addCheckoutRequest(checkoutRequest);
 
         try {
             CustomerCheckoutProcessor.CheckoutResult result = checkoutRequest.getResultFuture().get(30, TimeUnit.SECONDS);
             if ("success".equals(result.status)) {
                 session.removeAttribute("cart");
-                request.setAttribute("bill", (Bill) result.message);
-                request.setAttribute("message", "Order placed successfully!");
-                request.getRequestDispatcher("bill_display.jsp").forward(request, response);
+                // Store bill in session for bill_display.jsp to access
+                session.setAttribute("bill", (Bill) result.message);
+                session.setAttribute("message", "Order placed successfully!");
+                out.write("{\"status\":\"success\",\"message\":\"Order placed successfully!\"}");
             } else {
-                request.setAttribute("errorMessage", "Checkout failed: " + result.message);
-                request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                out.write("{\"status\":\"error\",\"message\":\"Checkout failed: " + result.message + "\"}");
             }
         } catch (Exception e) {
-            request.setAttribute("errorMessage", "Checkout failed: " + e.getMessage());
-            request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            out.write("{\"status\":\"error\",\"message\":\"Checkout failed: " + e.getMessage() + "\"}");
+        } finally {
+            out.flush();
         }
     }
 }

@@ -11,19 +11,27 @@
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
         .message { color: green; }
+        .error { color: red; }
     </style>
 </head>
 <body>
     <h2>Bill Details</h2>
     <% 
-        String message = (String) request.getAttribute("message");
-        if (message != null && !message.isEmpty()) {
+        String message = (String) request.getSession().getAttribute("message");
+        Bill bill = (Bill) request.getSession().getAttribute("bill");
+        
+        // Debugging: Check if attributes are present
+        if (message == null && bill == null) {
+    %>
+        <p class="error">Error: No bill or message found in session. Please try checking out again.</p>
+    <% 
+        } else {
+            if (message != null && !message.isEmpty()) {
     %>
         <p class="message"><%= message %></p>
     <% 
-        }
-        Bill bill = (Bill) request.getAttribute("bill");
-        if (bill != null) {
+            }
+            if (bill != null) {
     %>
         <p>Bill ID: <%= bill.getBillId() %></p>
         <p>Date: <%= bill.getBillDate() %></p>
@@ -37,7 +45,7 @@
             </tr>
             <% 
                 List<Bill.BillItem> billItems = bill.getBillItems();
-                if (billItems != null) {
+                if (billItems != null && !billItems.isEmpty()) {
                     for (Bill.BillItem item : billItems) {
             %>
                 <tr>
@@ -49,10 +57,16 @@
                 </tr>
             <% 
                     }
+                } else {
+            %>
+                <tr>
+                    <td colspan="5" class="error">No items found in bill.</td>
+                </tr>
+            <% 
                 }
             %>
         </table>
-        <p><strong ascendancy; font-weight: bold;">Total Price: <%= bill.getTotalPrice() %></p>
+        <p><strong style="font-weight: bold;">Total Price: <%= bill.getTotalPrice() %></strong></p>
         <p><strong>Cash Tendered:</strong> <%= bill.getCashTendered() %></p>
         <% 
             if (bill.getDiscount() > 0) {
@@ -63,6 +77,11 @@
         %>
         <p><strong>Change Amount:</strong> <%= bill.getChangeAmount() %></p>
     <% 
+            } else {
+    %>
+        <p class="error">Error: Bill details are not available.</p>
+    <% 
+            }
         }
     %>
     <br>
