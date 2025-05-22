@@ -1,47 +1,49 @@
 package cccp.queue;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-
 import cccp.command.Command;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class CommandProcessor {
-    private static final int THREAD_POOL_SIZE = 5;
-    private static final BlockingQueue<CommandRequest> queue = new LinkedBlockingQueue<>();
-    private static final ConcurrentHashMap<String, CommandResult> commandResults = new ConcurrentHashMap<>();
+    private static final int THREAD_POOL_SIZE = 4; // Match CustomerCheckoutProcessor
+    private static final int QUEUE_CAPACITY = 100; // Bounded queue
+    private static final BlockingQueue<CommandRequest> queue = new LinkedBlockingQueue<>(QUEUE_CAPACITY);
+    private static final ExecutorService executorService;
 
     static {
+        executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         for (int i = 0; i < THREAD_POOL_SIZE; i++) {
-            Thread worker = new Thread(new CommandWorker(), "CommandWorker-" + i);
-            worker.setDaemon(true);
-            worker.start();
+            executorService.submit(new CommandWorker());
         }
     }
 
     public static void addCommand(Command command, HttpServletRequest request, HttpServletResponse response) {
         CommandRequest cmdRequest = new CommandRequest(command, request, response);
-        queue.offer(cmdRequest);
+        if (!queue.offer(cmdRequest)) {
+            command.getResultFuture().complete(new CommandResult("failed", "Queue is full"));
+        }
     }
 
-    public static CommandResult getCommandResult(String resultKey) {
-        return commandResults.get(resultKey);
-    }
-
-    public static void clearCommandResult(String resultKey) {
-        commandResults.remove(resultKey);
+    public static void shutdown() {
+        executorService.shutdown();
     }
 
     private static class CommandWorker implements Runnable {
         @Override
         public void run() {
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
                 try {
                     CommandRequest cmdRequest = queue.take();
                     processCommand(cmdRequest);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
                 } catch (Exception e) {
+                    System.err.println("Error processing command: " + e.getMessage());
                     e.printStackTrace();
                 }
             }
@@ -49,21 +51,14 @@ public class CommandProcessor {
 
         private void processCommand(CommandRequest cmdRequest) {
             Command command = cmdRequest.getCommand();
-            String resultKey = command.getResultKey();
-            CommandResult result = new CommandResult();
-
             try {
                 command.execute();
-                result.status = "success";
-                result.message = "Command executed successfully";
+                System.out.println("✅ [Thread: " + Thread.currentThread().getName() + "] Processed command: " + command.getResultKey());
             } catch (Exception e) {
-                result.status = "failed";
-                result.message = "Error executing command: " + e.getMessage();
+                command.getResultFuture().complete(new CommandResult("failed", "Error processing command: " + e.getMessage()));
+                System.err.println("❌ [Thread: " + Thread.currentThread().getName() + "] Failed to process command: " + command.getResultKey());
                 e.printStackTrace();
             }
-
-            commandResults.put(resultKey, result);
-            System.out.println("✅ [Thread: " + Thread.currentThread().getName() + "] Processed command: " + resultKey);
         }
     }
 
@@ -92,7 +87,12 @@ public class CommandProcessor {
     }
 
     public static class CommandResult {
-        public String status = "pending";
-        public String message = null;
+        public String status;
+        public String message;
+
+        public CommandResult(String status, String message) {
+            this.status = status;
+            this.message = message;
+        }
     }
 }

@@ -1,8 +1,10 @@
 package cccp.command;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import cccp.OnlinePurchaseController;
+import cccp.queue.CommandProcessor.CommandResult;
 
 public class OnlinePurchaseCommand implements Command {
 
@@ -23,5 +25,11 @@ public class OnlinePurchaseCommand implements Command {
 	public String getResultKey() {
 		// TODO Auto-generated method stub
 		return resultKey;
+	}
+
+	@Override
+	public CompletableFuture<CommandResult> getResultFuture() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

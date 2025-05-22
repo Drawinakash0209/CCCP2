@@ -1,27 +1,11 @@
 package cccp.factory;
 
-import java.util.Scanner;
-
-import cccp.ReportService;
-import cccp.command.BatchCommand;
-import cccp.command.BillCommand;
-import cccp.command.BillReportCommand;
-import cccp.command.CategoryCommand;
-import cccp.command.Command;
-import cccp.command.OnlineOrderCommand;
-import cccp.command.ProductCommand;
-import cccp.command.ReorderReportCommand;
-import cccp.command.ReshelveReportCommand;
-import cccp.command.SalesReportCommand;
-import cccp.command.ShelfCommand;
-import cccp.command.StockReportCommand;
-import cccp.controller.*;
+import cccp.command.*;
 import cccp.model.dao.*;
 import cccp.queue.CommandProcessor;
-import cccp.service.*;
-import cccp.view.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.concurrent.TimeUnit;
 
 public class ControllerFactory {
     private final BatchDAOInterface batchDAO;
@@ -49,26 +33,14 @@ public class ControllerFactory {
 
         CommandProcessor.addCommand(command, request, response);
 
-        String resultKey = command.getResultKey();
-        int maxAttempts = 10;
-        int attempt = 0;
-        CommandProcessor.CommandResult result = null;
-
-        while (attempt < maxAttempts) {
-            result = CommandProcessor.getCommandResult(resultKey);
-            if (result != null && !"pending".equals(result.status)) {
-                break;
+        try {
+            CommandProcessor.CommandResult result = command.getResultFuture().get(30, TimeUnit.SECONDS);
+            if ("failed".equals(result.status)) {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, result.message);
             }
-            Thread.sleep(500);
-            attempt++;
-        }
-
-        CommandProcessor.clearCommandResult(resultKey);
-
-        if (result == null || "pending".equals(result.status)) {
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Command processing timed out");
-        } else if ("failed".equals(result.status)) {
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, result.message);
+            // Success case: Command's execute() already forwards to the appropriate servlet/JSP
+        } catch (Exception e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Command processing failed: " + e.getMessage());
         }
     }
 
