@@ -1,7 +1,6 @@
 package cccp.servlets;
 
 import cccp.model.Bill;
-import cccp.model.DeliveryDetails;
 import cccp.model.Product;
 import cccp.model.User;
 import cccp.model.dao.*;
@@ -22,10 +21,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @WebServlet("/onlineShop")
 public class OnlineShopServlet extends HttpServlet {
-
     private static final ProductDAOInterface productDAO = new ProductDAO();
     private static final BatchDAOInterface batchDAO = new BatchDAO();
     private static final BillDAOInterface billDAO = new BillDAO();
@@ -265,37 +264,24 @@ public class OnlineShopServlet extends HttpServlet {
             return;
         }
 
-        // Submit checkout request to CustomerCheckoutProcessor
         OnlineCheckoutRequest checkoutRequest = new OnlineCheckoutRequest(billingService, deliveryDetailsDAO, onlineOrderService,
                                                                           itemsToPurchase, user, name, phoneNumber, deliveryAddress);
         CustomerCheckoutProcessor.addCheckoutRequest(checkoutRequest);
 
-        // Poll for the result
-        CustomerCheckoutProcessor.CheckoutResult result = CustomerCheckoutProcessor.getCheckoutResult(checkoutRequest.getResultKey());
-        int timeoutSeconds = 30; // Increased from 5 to 15 seconds
-        long startTime = System.currentTimeMillis();
-        while ("pending".equals(result.status) && (System.currentTimeMillis() - startTime) < timeoutSeconds * 1000) {
-            try {
-                Thread.sleep(100); // Polling interval
-                result = CustomerCheckoutProcessor.getCheckoutResult(checkoutRequest.getResultKey());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ServletException("Interrupted while waiting for checkout result", e);
+        try {
+            CustomerCheckoutProcessor.CheckoutResult result = checkoutRequest.getResultFuture().get(30, TimeUnit.SECONDS);
+            if ("success".equals(result.status)) {
+                session.removeAttribute("cart");
+                request.setAttribute("bill", (Bill) result.message);
+                request.setAttribute("message", "Order placed successfully!");
+                request.getRequestDispatcher("bill_display.jsp").forward(request, response);
+            } else {
+                request.setAttribute("errorMessage", "Checkout failed: " + result.message);
+                request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
             }
-        }
-
-        if ("pending".equals(result.status)) {
-            request.setAttribute("errorMessage", "Checkout processing timed out. Please try again.");
+        } catch (Exception e) {
+            request.setAttribute("errorMessage", "Checkout failed: " + e.getMessage());
             request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
-        } else if ("failed".equals(result.status)) {
-            request.setAttribute("errorMessage", "Checkout failed: " + result.message);
-            request.getRequestDispatcher("checkout_details.jsp").forward(request, response);
-        } else if ("success".equals(result.status)) {
-            Bill generatedBill = (Bill) result.message;
-            session.removeAttribute("cart");
-            request.setAttribute("bill", generatedBill);
-            request.setAttribute("message", "Order placed successfully!");
-            request.getRequestDispatcher("bill_display.jsp").forward(request, response);
         }
     }
 }

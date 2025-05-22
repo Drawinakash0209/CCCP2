@@ -1,56 +1,63 @@
 package cccp.queue;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class CustomerCheckoutProcessor {
     private static final int THREAD_POOL_SIZE = 4;
-    private static final BlockingQueue<CheckoutRequest> queue = new LinkedBlockingQueue<>();
-    private static final ConcurrentHashMap<String, CheckoutResult> checkoutResults = new ConcurrentHashMap<>();
+    private static final int QUEUE_CAPACITY = 100;
+    private static final BlockingQueue<CheckoutRequest> queue = new LinkedBlockingQueue<>(QUEUE_CAPACITY);
+    private static final ExecutorService executorService;
 
     static {
+        executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         for (int i = 0; i < THREAD_POOL_SIZE; i++) {
-            Thread worker = new Thread(new CheckoutWorker(), "CheckoutWorker-" + i);
-            worker.setDaemon(true);
-            worker.start();
+            executorService.submit(new CheckoutWorker());
         }
     }
 
     public static void addCheckoutRequest(CheckoutRequest request) {
-        checkoutResults.put(request.getResultKey(), new CheckoutResult("pending", null));
-        queue.offer(request);
+        if (!queue.offer(request)) {
+            if (request instanceof OnlineCheckoutRequest) {
+                ((OnlineCheckoutRequest) request).getResultFuture().complete(
+                    new CheckoutResult("failed", "Queue is full"));
+            }
+        }
     }
 
-    public static CheckoutResult getCheckoutResult(String resultKey) {
-        return checkoutResults.get(resultKey);
-    }
-
-    public static void clearCheckoutResult(String resultKey) {
-        checkoutResults.remove(resultKey);
+    public static void shutdown() {
+        executorService.shutdown();
     }
 
     private static class CheckoutWorker implements Runnable {
         @Override
         public void run() {
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
                 try {
                     CheckoutRequest request = queue.take();
                     processCheckoutRequest(request);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
                 } catch (Exception e) {
+                    System.err.println("Error processing checkout: " + e.getMessage());
                     e.printStackTrace();
                 }
             }
         }
 
         private void processCheckoutRequest(CheckoutRequest request) {
-            String resultKey = request.getResultKey();
             try {
                 request.execute();
-                System.out.println("✅ [Thread: " + Thread.currentThread().getName() + "] Processed checkout request: " + resultKey);
+                System.out.println("✅ [Thread: " + Thread.currentThread().getName() + "] Processed checkout request: " + request.getResultKey());
             } catch (Exception e) {
-                checkoutResults.put(resultKey, new CheckoutResult("failed", "Error processing checkout: " + e.getMessage()));
-                System.err.println("❌ [Thread: " + Thread.currentThread().getName() + "] Failed to process checkout request: " + resultKey);
+                if (request instanceof OnlineCheckoutRequest) {
+                    ((OnlineCheckoutRequest) request).getResultFuture().complete(
+                        new CheckoutResult("failed", "Error processing checkout: " + e.getMessage()));
+                }
+                System.err.println("❌ [Thread: " + Thread.currentThread().getName() + "] Failed to process checkout request: " + request.getResultKey());
                 e.printStackTrace();
             }
         }

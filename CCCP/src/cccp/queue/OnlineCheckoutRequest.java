@@ -9,6 +9,7 @@ import cccp.service.BillingServiceInterface;
 import cccp.service.OnlineOrderService;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public class OnlineCheckoutRequest implements CheckoutRequest {
     private final BillingServiceInterface billingService;
@@ -20,7 +21,7 @@ public class OnlineCheckoutRequest implements CheckoutRequest {
     private final String phoneNumber;
     private final String deliveryAddress;
     private final String resultKey;
-    private CustomerCheckoutProcessor.CheckoutResult result;
+    private final CompletableFuture<CustomerCheckoutProcessor.CheckoutResult> resultFuture;
 
     public OnlineCheckoutRequest(BillingServiceInterface billingService, DeliveryDetailsDAOInterface deliveryDetailsDAO,
                                  OnlineOrderService onlineOrderService, Map<Product, Integer> itemsToPurchase, User user,
@@ -34,11 +35,11 @@ public class OnlineCheckoutRequest implements CheckoutRequest {
         this.phoneNumber = phoneNumber;
         this.deliveryAddress = deliveryAddress;
         this.resultKey = java.util.UUID.randomUUID().toString();
-        this.result = new CustomerCheckoutProcessor.CheckoutResult("pending", null);
+        this.resultFuture = new CompletableFuture<>();
     }
 
     @Override
-    public void execute() throws Exception {
+    public void execute() {
         try {
             Bill generatedBill = billingService.generateOnlineBill(user.getId(), itemsToPurchase);
             if (generatedBill != null) {
@@ -48,10 +49,7 @@ public class OnlineCheckoutRequest implements CheckoutRequest {
                 int saveResult = deliveryDetailsDAO.saveDeliveryDetails(deliveryDetails);
                 if (saveResult > 0) {
                     System.out.println("✅ [Thread: " + Thread.currentThread().getName() + "] Delivery details saved for bill ID: " + generatedBill.getBillId());
-                    // Update ConcurrentHashMap first
-                    CustomerCheckoutProcessor.getCheckoutResult(getResultKey()).status = "success";
-                    CustomerCheckoutProcessor.getCheckoutResult(getResultKey()).message = generatedBill;
-                    this.result = new CustomerCheckoutProcessor.CheckoutResult("success", generatedBill);
+                    resultFuture.complete(new CustomerCheckoutProcessor.CheckoutResult("success", generatedBill));
                 } else {
                     throw new Exception("Failed to save delivery details for bill ID: " + generatedBill.getBillId());
                 }
@@ -59,10 +57,7 @@ public class OnlineCheckoutRequest implements CheckoutRequest {
                 throw new Exception("Failed to generate bill for user ID: " + user.getId());
             }
         } catch (Exception e) {
-            CustomerCheckoutProcessor.getCheckoutResult(getResultKey()).status = "failed";
-            CustomerCheckoutProcessor.getCheckoutResult(getResultKey()).message = e.getMessage();
-            this.result = new CustomerCheckoutProcessor.CheckoutResult("failed", e.getMessage());
-            throw e;
+            resultFuture.complete(new CustomerCheckoutProcessor.CheckoutResult("failed", e.getMessage()));
         }
     }
 
@@ -71,8 +66,7 @@ public class OnlineCheckoutRequest implements CheckoutRequest {
         return resultKey;
     }
 
-    @Override
-    public CustomerCheckoutProcessor.CheckoutResult getResult() {
-        return result;
+    public CompletableFuture<CustomerCheckoutProcessor.CheckoutResult> getResultFuture() {
+        return resultFuture;
     }
 }
