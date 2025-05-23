@@ -1,7 +1,22 @@
 <%@ page import="java.util.List" %>
 <%@ page import="cccp.model.Product" %>
 <%@ page contentType="text/html; charset=UTF-8" language="java" %>
+<%@ page import="cccp.model.User" %>
+<%
+    // Retrieve the user object from the session
+    User user = (User) session.getAttribute("user");
 
+    // Basic check if user is logged in
+    if (user == null) {
+        response.sendRedirect("login.jsp?error=Please login first");
+        return; // Stop further processing of the page
+    }
+
+    // Assuming User has a getUsername() method
+    String username = user.getUsername();
+%>
+
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -140,3 +155,5 @@
         };
     };
 </script>
+</body>
+</html>
