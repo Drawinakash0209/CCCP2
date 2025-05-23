@@ -13,8 +13,24 @@
 
     // Assuming User has a getUsername() method
     String username = user.getUsername();
+
+    // Retrieve category
+    Category category = null;
+    String errorMessage = null;
+    try {
+        int id = Integer.parseInt(request.getParameter("id"));
+        CategoryDAO categoryDAO = new CategoryDAO();
+        category = categoryDAO.searchCategory(id);
+        if (category == null) {
+            errorMessage = "Category not found.";
+        }
+    } catch (NumberFormatException e) {
+        errorMessage = "Invalid category ID.";
+    }
 %>
 
+<!DOCTYPE html>
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,72 +38,67 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.0/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="css/styles.css">
 </head>
-
 <body>
-    <div x-data="setup()" :class="{ 'dark': isDark }">
-        <div class="min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-white dark:bg-gray-700 text-black dark:text-white">
-            
-            <!-- Header -->
-            <jsp:include page="employee_dashboard_header.jsp" />
-            
-            <!-- Sidebar -->
-            <jsp:include page="employee_dashboard_sidebar.jsp" />
-            
-            <div class="h-full ml-14 mt-14 mb-10 md:ml-64">
-                <div class="max-w-md mx-auto mt-10 bg-white shadow-lg rounded-lg overflow-hidden">
-                    <div class="text-2xl py-4 px-6 bg-gray-900 text-white text-center font-bold uppercase">
-                        Edit Category
+<div x-data="setup()" :class="{ 'dark': isDark }">
+    <div class="min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-white dark:bg-gray-700 text-black dark:text-white">
+        <!-- Header -->
+        <jsp:include page="employee_dashboard_header.jsp" />
+
+        <!-- Sidebar -->
+        <jsp:include page="employee_dashboard_sidebar.jsp" />
+
+        <!-- Main Content -->
+        <div class="h-full ml-14 mt-14 mb-10 md:ml-64 px-4">
+            <div class="max-w-md mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mt-10">
+                <h1 class="text-2xl font-bold mb-6 text-center dark:text-white">Edit Category</h1>
+                <% if (errorMessage != null) { %>
+                    <div class="mb-6 p-4 rounded-md bg-red-100 text-red-700 text-center">
+                        <%= errorMessage %>
                     </div>
-
-                    <%
-                        int id = Integer.parseInt(request.getParameter("id"));
-                        CategoryDAO categoryDAO = new CategoryDAO();
-                        Category category = categoryDAO.searchCategory(id);
-                    %>
-
-                    <form class="py-4 px-6" action="/CCCP/CategoryServlet" method="POST">
+                <% } else { %>
+                    <form action="/CCCP/CategoryServlet" method="POST" class="space-y-4">
                         <input type="hidden" name="action" value="update">
                         <input type="hidden" name="id" value="<%= category.getId() %>">
-                        
-                        <div class="mb-4">
-                            <label class="block text-gray-700 font-bold mb-2" for="categoryName">Category Name</label>
-                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                                id="categoryName" name="categoryName" type="text" required placeholder="Enter category name" value="<%= category.getName() %>">
+                        <div>
+                            <label class="block text-gray-700 dark:text-gray-200 font-bold mb-2" for="categoryName">Category Name</label>
+                            <input class="w-full px-4 py-2 rounded-md border border-gray-300 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                   id="categoryName" name="categoryName" type="text" required placeholder="Enter category name" value="<%= category.getName() %>">
                         </div>
-                        
-                        <div class="flex items-center justify-center mb-4">
-                            <button class="bg-gray-900 text-white py-2 px-4 rounded hover:bg-gray-800 focus:outline-none focus:shadow-outline" type="submit">
+                        <div class="flex items-center justify-center">
+                            <button class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300" type="submit">
                                 Update Category
                             </button>
                         </div>
                     </form>
-
-                </div>
+                <% } %>
             </div>
         </div>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js" defer></script>
-    <script>
-        const setup = () => {
-            const getTheme = () => {
-                if (window.localStorage.getItem('dark')) {
-                    return JSON.parse(window.localStorage.getItem('dark'));
-                }
-                return !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            };
-            
-            const setTheme = (value) => {
-                window.localStorage.setItem('dark', value);
-            };
-            
-            return {
-                isDark: getTheme(),
-                toggleTheme() {
-                    this.isDark = !this.isDark;
-                    setTheme(this.isDark);
-                },
-            };
+</div>
+
+<!-- Alpine.js for dark mode toggle -->
+<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js" defer></script>
+<script>
+    const setup = () => {
+        const getTheme = () => {
+            if (window.localStorage.getItem('dark')) {
+                return JSON.parse(window.localStorage.getItem('dark'));
+            }
+            return !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         };
-    </script>
+        
+        const setTheme = (value) => {
+            window.localStorage.setItem('dark', value);
+        };
+        
+        return {
+            isDark: getTheme(),
+            toggleTheme() {
+                this.isDark = !this.isDark;
+                setTheme(this.isDark);
+            },
+        };
+    };
+</script>
 </body>
+</html>

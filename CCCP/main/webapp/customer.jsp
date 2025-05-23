@@ -85,15 +85,7 @@
                     </a>
                 </div>
 
-                <!-- Card 2 -->
-                <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-sm w-full">
-                    <img src="https://optimise2.assets-servd.host/learned-skunk/production/What-Is-a-POS-Transaction.jpg?w=1152&h=1152&auto=compress%2Cformat&fit=clip&dm=1675116763&s=8bd3ed922d380deb312696cf7f665a85" class="w-full h-64 object-cover">
-                    <div class="p-6 text-center">
-                        <h3 class="text-xl font-medium text-gray-800 mb-2">View Orders</h3>
-                        <p class="text-gray-700 text-base">Check the status of your past and current orders.</p>
-                        <a href="viewOrders" class="mt-4 inline-block px-4 py-2 bg-[#c8a876] text-white rounded hover:bg-[#c09858]">View Orders</a>
-                    </div>
-                </div>
+        
             </div>
         </div>
     </section>
@@ -140,11 +132,7 @@
 
     <div class="relative mx-auto max-w-7xl z-10 grid grid-cols-1 gap-10 pt-14 sm:grid-cols-2 lg:grid-cols-3">
         <div class="rounded-md border border-gray-300 bg-white p-8 text-center shadow-md">
-            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-md border bg-[#c8a876] text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-            </div>
+
             <h3 class="mt-6 text-gray-800 font-medium">Superior Quality</h3>
             <p class="my-4 mb-0 font-normal leading-relaxed tracking-wide text-gray-600">
                 Our flours and spices are sourced and processed to ensure unmatched freshness and flavor for your dishes.
@@ -152,11 +140,7 @@
         </div>
 
         <div class="rounded-md border border-gray-300 bg-white p-8 text-center shadow-md">
-            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-md border bg-[#c8a876] text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
-                </svg>
-            </div>
+
             <h3 class="mt-6 text-gray-800 font-medium">Wide Variety</h3>
             <p class="my-4 mb-0 font-normal leading-relaxed tracking-wide text-gray-600">
                 Explore a diverse range of flours, spices, and specialty products tailored to meet all your culinary needs.
@@ -164,11 +148,7 @@
         </div>
 
         <div class="rounded-md border border-gray-300 bg-white p-8 text-center shadow-md">
-            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-md border bg-[#c8a876] text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-            </div>
+
             <h3 class="mt-6 text-gray-800 font-medium">Convenient Shopping</h3>
             <p class="my-4 mb-0 font-normal leading-relaxed tracking-wide text-gray-600">
                 Enjoy fast shipping, competitive prices, and excellent customer service with our easy-to-use online platform.
