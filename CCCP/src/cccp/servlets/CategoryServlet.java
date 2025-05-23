@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 
 @WebServlet("/CategoryServlet")
@@ -43,19 +44,31 @@ public class CategoryServlet extends HttpServlet {
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
+
+        response.setContentType("application/json");
+        PrintWriter out = response.getWriter();
+
+        if (user == null) {
+            out.println("{\"success\": false, \"message\": \"Please login first\"}");
+            return;
+        }
+
         String action = request.getParameter("action");
-        System.out.println("Action: " + action); // Debugging line
         if (action == null) {
-            request.setAttribute("message", "Error: Action parameter is missing.");
-            doGet(request, response);
+            out.println("{\"success\": false, \"message\": \"Action parameter is missing\"}");
             return;
         }
 
         try {
             if ("create".equals(action)) {
                 String categoryName = request.getParameter("categoryName");
+                if (categoryName == null || categoryName.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Category name is required.");
+                }
                 int newId = categoryService.createCategory(categoryName);
-                request.setAttribute("message", "Category added successfully! New ID: " + newId);
+                out.println("{\"success\": true, \"message\": \"Category added successfully! New ID: " + newId + "\"}");
             } else if ("update".equals(action)) {
                 String idStr = request.getParameter("id");
                 String categoryName = request.getParameter("categoryName");
@@ -64,7 +77,7 @@ public class CategoryServlet extends HttpServlet {
                 }
                 int id = Integer.parseInt(idStr);
                 categoryService.updateCategory(id, categoryName);
-                request.setAttribute("message", "Category updated successfully!");
+                out.println("{\"success\": true, \"message\": \"Category updated successfully\"}");
             } else if ("delete".equals(action)) {
                 String idStr = request.getParameter("id");
                 if (idStr == null || idStr.trim().isEmpty()) {
@@ -72,14 +85,13 @@ public class CategoryServlet extends HttpServlet {
                 }
                 int id = Integer.parseInt(idStr);
                 categoryService.deleteCategory(id);
-                request.setAttribute("message", "Category deleted successfully!");
+                out.println("{\"success\": true, \"message\": \"Category deleted successfully\"}");
             } else {
-                throw new IllegalArgumentException("Invalid action: " + action);
+                out.println("{\"success\": false, \"message\": \"Invalid action: " + action + "\"}");
             }
         } catch (Exception e) {
-            request.setAttribute("message", "Error: " + e.getMessage());
-            // Re-throw to ensure CommandProcessor logs the exception
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.println("{\"success\": false, \"message\": \"Error: " + e.getMessage() + "\"}");
         }
-        doGet(request, response);
     }
 }

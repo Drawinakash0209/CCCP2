@@ -1,20 +1,13 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="cccp.model.Category, cccp.model.dao.CategoryDAO" %>
 <%@ page import="cccp.model.User" %>
 <%
-    // Retrieve the user object from the session
     User user = (User) session.getAttribute("user");
-
-    // Basic check if user is logged in
     if (user == null) {
         response.sendRedirect("login.jsp?error=Please login first");
-        return; // Stop further processing of the page
+        return;
     }
-
-    // Assuming User has a getUsername() method
     String username = user.getUsername();
 %>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -27,28 +20,21 @@
 <body>
 <div x-data="setup()" :class="{ 'dark': isDark }">
     <div class="min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-white dark:bg-gray-700 text-black dark:text-white">
-        <!-- Header -->
         <jsp:include page="employee_dashboard_header.jsp" />
-
-        <!-- Sidebar -->
         <jsp:include page="employee_dashboard_sidebar.jsp" />
-
-        <!-- Main Content -->
         <div class="h-full ml-14 mt-14 mb-10 md:ml-64 px-4">
             <div class="max-w-md mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mt-10">
                 <h1 class="text-2xl font-bold mb-6 text-center dark:text-white">Add New Category</h1>
-                <form action="/CCCP/ActionServlet?option=1" method="POST" enctype="application/x-www-form-urlencoded" class="space-y-4">
+                <div id="message" class="hidden mb-6 p-4 rounded-md text-center"></div>
+                <form id="add-category-form" class="space-y-4">
+                    <input type="hidden" name="action" value="create">
                     <div>
                         <label class="block text-gray-700 dark:text-gray-200 font-bold mb-2" for="categoryName">Category Name</label>
-                        <input
-                            class="w-full px-4 py-2 rounded-md border border-gray-300 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            id="categoryName" name="categoryName" type="text" required placeholder="Enter category name">
+                        <input class="w-full px-4 py-2 rounded-md border border-gray-300 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               id="categoryName" name="categoryName" type="text" required placeholder="Enter category name">
                     </div>
-                    <input type="hidden" name="action" value="create" />
                     <div class="flex items-center justify-center">
-                        <button
-                            class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300"
-                            type="submit">
+                        <button class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300" type="submit">
                             Create Category
                         </button>
                     </div>
@@ -57,8 +43,6 @@
         </div>
     </div>
 </div>
-
-<!-- Alpine.js for dark mode toggle -->
 <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js" defer></script>
 <script>
     const setup = () => {
@@ -68,13 +52,10 @@
             }
             return !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         };
-
         const setTheme = (value) => {
             window.localStorage.setItem('dark', value);
         };
-
         return {
-            loading: true,
             isDark: getTheme(),
             toggleTheme() {
                 this.isDark = !this.isDark;
@@ -82,6 +63,37 @@
             },
         };
     };
+    document.getElementById('add-category-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const messageDiv = document.getElementById('message');
+        const urlEncodedData = new URLSearchParams(formData).toString();
+        try {
+            const response = await fetch('/CCCP/CategoryServlet', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: urlEncodedData
+            });
+            const result = await response.json();
+            messageDiv.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+            messageDiv.textContent = result.message;
+            messageDiv.classList.add(result.success ? 'bg-green-100' : 'bg-red-100', result.success ? 'text-green-700' : 'text-red-700');
+            if (result.success) {
+                form.reset();
+                setTimeout(() => {
+                    messageDiv.classList.add('hidden');
+                    window.location.href = '/CCCP/CategoryServlet';
+                }, 2000);
+            }
+        } catch (error) {
+            messageDiv.classList.remove('hidden', 'bg-green-100', 'text-green-700');
+            messageDiv.classList.add('bg-red-100', 'text-red-700');
+            messageDiv.textContent = 'Error: Failed to add category';
+        }
+    });
 </script>
 </body>
 </html>
