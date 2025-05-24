@@ -38,7 +38,6 @@ public class ControllerFactory {
             if ("failed".equals(result.status)) {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, result.message);
             }
-            // Success case: Command's execute() already forwards to the appropriate servlet/JSP
         } catch (Exception e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Command processing failed: " + e.getMessage());
         }

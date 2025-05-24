@@ -103,9 +103,7 @@
                     </table>
                 </div>
 
-                <div class="flex justify-center mt-6">
-                    <a href="index.html" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300">Return to Dashboard</a>
-                </div>
+               
             </div>
         </div>
     </div>
@@ -135,6 +133,12 @@
             },
         };
     };
+    // Start polling every 5 seconds
+    document.addEventListener('alpine:init', () => {
+        setInterval(() => {
+            Alpine.data('setup')().checkRestockEvents();
+        }, 5000);
+    });
 </script>
 </body>
 </html>

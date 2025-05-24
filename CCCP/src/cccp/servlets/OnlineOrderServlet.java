@@ -28,6 +28,9 @@ public class OnlineOrderServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private OnlineOrderServiceInterface orderService;
     private ProductService productService;
+    private volatile String lastRestockProductId;
+    private volatile int lastRestockQuantity;
+    private volatile long lastRestockTimestamp;
 
     @Override
     public void init() throws ServletException {
@@ -43,24 +46,44 @@ public class OnlineOrderServlet extends HttpServlet {
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        HttpSession session = request.getSession();
+        HttpSession session = request.getSession(false);
         User user = (User) session.getAttribute("user");
+
+        if ("true".equals(request.getParameter("checkRestock"))) {
+            response.setContentType("application/json");
+            PrintWriter out = response.getWriter();
+            if (user == null) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                out.println("{\"success\": false, \"message\": \"Please login first\"}");
+                return;
+            }
+            synchronized (this) {
+                if (lastRestockTimestamp > 0) {
+                    out.println("{\"productId\": \"" + lastRestockProductId + "\", \"quantity\": " + lastRestockQuantity + ", \"timestamp\": " + lastRestockTimestamp + "}");
+                } else {
+                    out.println("{}");
+                }
+            }
+            return;
+        }
 
         if (user == null) {
             response.sendRedirect("login.jsp?error=Please login first");
             return;
         }
+        response.setContentType("text/html");
         request.getRequestDispatcher("onlineStockRestock.jsp").forward(request, response);
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        HttpSession session = request.getSession();
+        HttpSession session = request.getSession(false);
         User user = (User) session.getAttribute("user");
 
         response.setContentType("application/json");
         PrintWriter out = response.getWriter();
 
         if (user == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.println("{\"success\": false, \"message\": \"Please login first\"}");
             return;
         }
@@ -92,6 +115,11 @@ public class OnlineOrderServlet extends HttpServlet {
         try {
             orderService.allocateStockForOnlineOrder(productId, quantity, new java.util.Date(), strategy);
             orderService.addRestockListener(productService);
+            synchronized (this) {
+                lastRestockProductId = productId;
+                lastRestockQuantity = quantity;
+                lastRestockTimestamp = System.currentTimeMillis();
+            }
             out.println("{\"success\": true, \"message\": \"Online inventories restocked successfully\"}");
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);

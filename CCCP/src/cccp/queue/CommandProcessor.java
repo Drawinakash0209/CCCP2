@@ -9,8 +9,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class CommandProcessor {
-    private static final int THREAD_POOL_SIZE = 4; // Match CustomerCheckoutProcessor
-    private static final int QUEUE_CAPACITY = 100; // Bounded queue
+    private static final int THREAD_POOL_SIZE = 4; 
+    private static final int QUEUE_CAPACITY = 100;
     private static final BlockingQueue<CommandRequest> queue = new LinkedBlockingQueue<>(QUEUE_CAPACITY);
     private static final ExecutorService executorService;
 

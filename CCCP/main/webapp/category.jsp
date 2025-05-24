@@ -115,6 +115,7 @@
             }
         };
     };
+
     async function deleteCategory(categoryId) {
         const messageDiv = document.getElementById('message');
         try {
@@ -132,20 +133,50 @@
             messageDiv.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
             messageDiv.textContent = result.message;
             messageDiv.classList.add(result.success ? 'bg-green-100' : 'bg-red-100', result.success ? 'text-green-700' : 'text-red-700');
+            
             if (result.success) {
-                const row = document.querySelector(`tr[data-category-id="${categoryId}"]`);
-                if (row) row.remove();
-                if (!document.querySelector('#category-table-body tr')) {
-                    document.getElementById('category-table-container').innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 italic mt-6">No categories found.</p>';
-                }
+                await refreshCategoryTable();
                 setTimeout(() => messageDiv.classList.add('hidden'), 2000);
             }
         } catch (error) {
+            console.error('Delete error:', error);
             messageDiv.classList.remove('hidden', 'bg-green-100', 'text-green-700');
             messageDiv.classList.add('bg-red-100', 'text-red-700');
             messageDiv.textContent = 'Error: Failed to delete category';
         }
     }
+
+    async function refreshCategoryTable() {
+        try {
+            const response = await fetch('/CCCP/CategoryServlet?t=' + Date.now(), {
+                method: 'GET',
+                headers: {
+                    'Accept': 'text/html'
+                }
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTableContainer = doc.querySelector('#category-table-container');
+            if (!newTableContainer) {
+                throw new Error('Table container not found in response');
+            }
+            document.getElementById('category-table-container').innerHTML = newTableContainer.innerHTML;
+            const searchInput = document.querySelector('input[x-model="searchQuery"]');
+            if (searchInput && searchInput._x_model.get()) {
+                setup().filterCategories();
+            }
+        } catch (error) {
+            console.error('Error refreshing category table:', error);
+            // Suppress error message during polling to avoid user confusion
+        }
+    }
+
+    // Start polling every 5 seconds
+    setInterval(refreshCategoryTable, 5000);
 </script>
 </body>
 </html>

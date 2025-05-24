@@ -1,3 +1,4 @@
+
 package cccp.servlets;
 
 import jakarta.servlet.ServletException;
@@ -9,6 +10,7 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Date;
 
 import cccp.model.User;
 import cccp.model.dao.BatchDAO;
@@ -28,6 +30,9 @@ public class ShelfRestockServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private ShelfServiceInterface shelfService;
     private ProductService productService;
+    private volatile String lastRestockProductId; // Store last restock details
+    private volatile int lastRestockQuantity;
+    private volatile long lastRestockTimestamp;
 
     @Override
     public void init() throws ServletException {
@@ -43,24 +48,42 @@ public class ShelfRestockServlet extends HttpServlet {
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        HttpSession session = request.getSession();
-        User user = (User) session.getAttribute("user");
-
-        if (user == null) {
-            response.sendRedirect("login.jsp?error=Please login first");
-            return;
-        }
-        request.getRequestDispatcher("shelfRestock.jsp").forward(request, response);
-    }
-
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        HttpSession session = request.getSession();
+        HttpSession session = request.getSession(false);
         User user = (User) session.getAttribute("user");
 
         response.setContentType("application/json");
         PrintWriter out = response.getWriter();
 
         if (user == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            out.println("{\"success\": false, \"message\": \"Please login first\"}");
+            return;
+        }
+
+        if ("true".equals(request.getParameter("checkRestock"))) {
+            synchronized (this) {
+                if (lastRestockTimestamp > 0) {
+                    out.println("{\"productId\": \"" + lastRestockProductId + "\", \"quantity\": " + lastRestockQuantity + ", \"timestamp\": " + lastRestockTimestamp + "}");
+                } else {
+                    out.println("{}");
+                }
+            }
+            return;
+        }
+
+        response.setContentType("text/html");
+        request.getRequestDispatcher("shelfRestock.jsp").forward(request, response);
+    }
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession(false);
+        User user = (User) session.getAttribute("user");
+
+        response.setContentType("application/json");
+        PrintWriter out = response.getWriter();
+
+        if (user == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.println("{\"success\": false, \"message\": \"Please login first\"}");
             return;
         }
@@ -90,8 +113,13 @@ public class ShelfRestockServlet extends HttpServlet {
 
         BatchSelectionStrategy strategy = new ExpiryBasedSelectionStrategy(new BatchDAO());
         try {
-            shelfService.restockShelf(productId, quantity, new java.util.Date(), strategy);
+            shelfService.restockShelf(productId, quantity, new Date(), strategy);
             shelfService.addRestockListener(productService);
+            synchronized (this) {
+                lastRestockProductId = productId;
+                lastRestockQuantity = quantity;
+                lastRestockTimestamp = System.currentTimeMillis();
+            }
             out.println("{\"success\": true, \"message\": \"Shelf restocked successfully\"}");
         } catch (IllegalStateException e) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);

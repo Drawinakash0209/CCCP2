@@ -162,11 +162,7 @@
             messageDiv.classList.add(result.success ? 'bg-green-100' : 'bg-red-100', result.success ? 'text-green-700' : 'text-red-700');
 
             if (result.success) {
-                const row = document.querySelector(`tr[data-product-id="${productId}"]`);
-                if (row) row.remove();
-                if (!document.querySelector('#product-table-body tr')) {
-                    document.getElementById('product-table-container').innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 italic mt-6">No products found.</p>';
-                }
+                await refreshProductTable();
                 setTimeout(() => messageDiv.classList.add('hidden'), 2000);
             }
         } catch (error) {
@@ -176,6 +172,39 @@
             messageDiv.textContent = 'Error: Failed to delete product';
         }
     }
+
+    async function refreshProductTable() {
+        try {
+            const response = await fetch('/CCCP/ProductServlet?t=' + Date.now(), {
+                method: 'GET',
+                headers: {
+                    'Accept': 'text/html'
+                }
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTableContainer = doc.querySelector('#product-table-container');
+            if (!newTableContainer) {
+                throw new Error('Table container not found in response');
+            }
+            document.getElementById('product-table-container').innerHTML = newTableContainer.innerHTML;
+            const searchInput = document.querySelector('input[x-model="searchQuery"]');
+            if (searchInput && searchInput._x_model.get()) {
+                setup().filterProducts();
+            }
+        } catch (error) {
+            console.error('Error refreshing product table:', error);
+            // Suppress error message to avoid user confusion during polling
+            // Optionally log to server or handle silently
+        }
+    }
+
+    // Start polling every 5 seconds
+    setInterval(refreshProductTable, 5000);
 </script>
 </body>
 </html>

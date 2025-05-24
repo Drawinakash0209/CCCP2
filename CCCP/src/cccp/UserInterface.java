@@ -14,7 +14,6 @@ public class UserInterface {
     public UserInterface(Scanner scanner) {
         this.scanner = scanner;
         this.controllerFactory = new ControllerFactory(
-            scanner,
             new BatchDAO(),
             new ShelfDAO(),
             new ProductDAO(),
@@ -50,12 +49,7 @@ public class UserInterface {
                 return;
             }
 
-            Command command = controllerFactory.getCommand(option, null, null);
-            if (command != null) {
-                command.execute();
-            } else {
-                System.out.println("Command execution failed. Please try again.");
-            }
+			
         } catch (InputMismatchException e) {
             System.out.println("Error: Invalid input. Please enter a number.");
             scanner.nextLine();

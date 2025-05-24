@@ -16,12 +16,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 public class LoginRequestProcessor {
-    private static final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors(); // Dynamic sizing
+    private static final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
     private static final BlockingQueue<LoginRequest> queue = new LinkedBlockingQueue<>(100);
     private static final ExecutorService executorService;
 
     static {
-        // Use a cached thread pool or a fixed thread pool with dynamic sizing
         executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         for (int i = 0; i < THREAD_POOL_SIZE; i++) {
             executorService.submit(new LoginWorker());
@@ -34,7 +33,6 @@ public class LoginRequestProcessor {
         }
     }
 
-    // Shutdown executor service gracefully
     public static void shutdown() {
         executorService.shutdown();
     }
@@ -50,7 +48,6 @@ public class LoginRequestProcessor {
                     Thread.currentThread().interrupt();
                     break;
                 } catch (Exception e) {
-                    // Log error properly (e.g., use SLF4J or java.util.logging)
                     System.err.println("Error processing login: " + e.getMessage());
                 }
             }
@@ -78,7 +75,6 @@ public class LoginRequestProcessor {
                 System.out.println("[Thread: " + Thread.currentThread().getName() + "] User not found: " + username);
             }
 
-            // Complete the future with the result
             loginRequest.getResultFuture().complete(result);
         }
     }
