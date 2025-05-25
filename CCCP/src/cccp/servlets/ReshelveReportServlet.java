@@ -5,11 +5,14 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
 import java.util.List;
 
 import cccp.ReportService;
 import cccp.ReshelveReport;
+import cccp.model.User;
 import cccp.model.dao.BatchDAO;
 import cccp.model.dao.BatchDAOInterface;
 import cccp.model.dao.ProductDAO;
@@ -39,6 +42,13 @@ public class ReshelveReportServlet extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
+
+        if (user == null) {
+            response.sendRedirect("login.jsp?error=Please login first");
+            return;
+        }
 		// TODO Auto-generated method stub
 		ReshelveReport report = reportService.generateReshelveReport();
 		request.setAttribute("report", report);
@@ -49,6 +59,13 @@ public class ReshelveReportServlet extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
+
+        if (user == null) {
+            response.sendRedirect("login.jsp?error=Please login first");
+            return;
+        }
 		// TODO Auto-generated method stub
 		doGet(request, response);
 	}

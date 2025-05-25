@@ -6,6 +6,8 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -13,6 +15,7 @@ import java.util.Date;
 
 import cccp.ReportService;
 import cccp.SaleReport;
+import cccp.model.User;
 import cccp.model.dao.ProductDAO;
 import cccp.model.dao.SaleDAO;
 
@@ -28,6 +31,13 @@ public class SalesReportServlet extends HttpServlet {
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
+
+        if (user == null) {
+            response.sendRedirect("login.jsp?error=Please login first");
+            return;
+        }
         String inputDate = request.getParameter("date");
         if (inputDate != null && !inputDate.isEmpty()) {
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");

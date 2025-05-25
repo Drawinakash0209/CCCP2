@@ -2,6 +2,15 @@
 <%@ page import="java.util.List" %>
 <%@ page import="cccp.ReshelveReport" %>
 <%@ page import="cccp.ReshelveReport.Item" %>
+<%@ page import="cccp.model.User" %>
+<%
+    User user = (User) session.getAttribute("user");
+    if (user == null) {
+        response.sendRedirect("login.jsp?error=Please login first");
+        return;
+    }
+    String username = user.getUsername();
+%>
 
 <!DOCTYPE html>
 <html>

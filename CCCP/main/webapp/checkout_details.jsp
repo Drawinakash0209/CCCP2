@@ -1,4 +1,13 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="cccp.model.User" %>
+<%
+    User user = (User) session.getAttribute("user");
+    if (user == null) {
+        response.sendRedirect("login.jsp?error=Please login first");
+        return;
+    }
+    String username = user.getUsername();
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
