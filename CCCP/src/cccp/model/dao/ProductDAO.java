@@ -311,7 +311,7 @@ public class ProductDAO implements ProductDAOInterface{
     
     public List<Product> getAllProducts(){
     	List<Product> products = new ArrayList<>();
-    	String query = "SELECT id, name, reorder_level, price FROM products";
+    	String query = "SELECT id, name, reorder_level, price, category_id FROM products";
     	
     	 try (
     			 Connection connection = databaseConnection.getConnection();
@@ -323,6 +323,7 @@ public class ProductDAO implements ProductDAOInterface{
  				String name = rs.getString("name");
  				int restockQuantity = rs.getInt("reorder_level");
  				double price = rs.getDouble("price");
+ 				int categoryId = rs.getInt("category_id");
  				
  				
     			 Product product = new Product.Builder()
@@ -330,6 +331,7 @@ public class ProductDAO implements ProductDAOInterface{
  						.setName(name)
  						.setPrice(price)
  						.setReorderLevel(restockQuantity)
+ 						.setCategoryId(categoryId)
  						.build();
     			 products.add(product);
     		 }

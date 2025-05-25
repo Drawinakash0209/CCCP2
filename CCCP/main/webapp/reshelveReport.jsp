@@ -103,6 +103,12 @@
             },
         }
     }
+    // Start polling every 5 seconds
+    document.addEventListener('alpine:init', () => {
+        setInterval(() => {
+            Alpine.data('setup')().checkRestockEvents();
+        }, 5000);
+    });
 </script>
 </body>
 </html>
